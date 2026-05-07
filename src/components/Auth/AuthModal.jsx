@@ -50,51 +50,15 @@ export default function AuthModal() {
     if (!isFirebaseConfigured) { handleDemo(); return; }
 
     if (isCapacitor) {
+      // With skipNativeAuth: true, the plugin opens web-based Google Sign-In
+      // which directly signs in the web Firebase SDK
       try {
-        console.log('Native signInWithGoogle...');
-        const nativeResult = await FirebaseAuthentication.signInWithGoogle();
-        console.log('Native result uid:', nativeResult.user?.uid);
+        console.log('Web-based Google Sign-In via plugin...');
+        await FirebaseAuthentication.signInWithGoogle();
+        // Modal closes, onAuthStateChanged in AppContext will pick up the user
         setShowAuth(false);
-
-        // Wait for plugin auto-sync to web SDK
-        console.log('Waiting for web SDK auth state...');
-        const { getAuth } = await import('firebase/auth');
-        const webAuth = getAuth();
-        for (let i = 0; i < 20; i++) {
-          await new Promise(r => setTimeout(r, 500));
-          console.log(`Poll ${i + 1}: webAuth.currentUser =`, webAuth.currentUser?.uid || 'null');
-          if (webAuth.currentUser) {
-            console.log('Web SDK auto-synced! uid:', webAuth.currentUser.uid);
-            return;
-          }
-        }
-        console.warn('Web SDK did not auto-sync after 10 seconds');
-
-        // Fallback: get fresh ID token from plugin and sign in web SDK
-        console.log('Fallback: getting fresh ID token from plugin...');
-        const tokenResult = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
-        console.log('Raw getIdToken result keys:', Object.keys(tokenResult));
-        console.log('Raw getIdToken result:', JSON.stringify({ tokenPrefix: tokenResult.token?.slice(0, 20), idTokenPrefix: tokenResult.idToken?.slice(0, 20) }));
-        const freshToken = tokenResult.token || tokenResult.idToken;
-        console.log('Fresh token extracted:', freshToken ? freshToken.slice(0, 30) + '...' : 'null');
-
-        if (freshToken) {
-          console.log('Trying signInWithCredential with fresh token...');
-          const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-          const credential = GoogleAuthProvider.credential(freshToken);
-          try {
-            const webResult = await signInWithCredential(auth, credential);
-            console.log('Manual sign-in success:', webResult.user.uid);
-          } catch (credErr) {
-            console.error('Manual sign-in failed:', credErr.code, credErr.message);
-            console.error('Full error:', credErr);
-          }
-        } else {
-          console.error('No fresh token available');
-        }
       } catch (err) {
-        console.error('Native sign-in error:', err.code, err.message);
-        console.error('Full error:', err);
+        console.error('Web sign-in error:', err.code, err.message);
         setError(err.message || 'Google sign-in failed');
       }
       return;
