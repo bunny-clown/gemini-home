@@ -54,10 +54,19 @@ export default function AuthModal() {
         console.log('Trying native signInWithGoogle...');
         const result = await FirebaseAuthentication.signInWithGoogle();
         console.log('Native signInWithGoogle result:', result);
-        if (result.user) {
-          const firstName = result.user.displayName?.split(' ')[0] || '';
+        console.log('Native user uid:', result.user?.uid);
+
+        // The native plugin also signs in the web SDK — prefer that user
+        const { getAuth } = await import('firebase/auth');
+        const webAuth = getAuth();
+        const webUser = webAuth.currentUser;
+        console.log('Web auth currentUser:', webUser?.uid);
+
+        const finalUser = webUser || result.user;
+        if (finalUser) {
+          const firstName = finalUser.displayName?.split(' ')[0] || '';
           if (firstName) setUserName(firstName);
-          setUser(result.user);
+          setUser(finalUser);
           setShowAuth(false);
         }
       } catch (err) {

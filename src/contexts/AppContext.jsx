@@ -34,7 +34,12 @@ export function AppProvider({ children }) {
 
   /* ── Load from Firestore when real user changes ───────────────────── */
   useEffect(() => {
+    console.log('[AppContext] user changed:', user);
+    console.log('[AppContext] isRealFirebaseUser:', isRealFirebaseUser(user));
+    console.log('[AppContext] db available:', !!db);
+
     if (!isRealFirebaseUser(user)) {
+      console.log('[AppContext] Not a real Firebase user — skipping Firestore');
       setIsReady(true);
       return;
     }
@@ -45,22 +50,28 @@ export function AppProvider({ children }) {
     }
 
     const ref = getUserDataRef(user.uid);
+    console.log('[AppContext] Starting Firestore listener for uid:', user.uid);
+
     unsubscribeRef.current = onSnapshot(
       ref,
       (snapshot) => {
+        console.log('[AppContext] Firestore snapshot exists:', snapshot.exists());
         if (snapshot.exists()) {
           const data = snapshot.data();
+          console.log('[AppContext] Firestore data keys:', Object.keys(data));
           if (!pendingRef.current) {
             setScenarios(data.scenarios ?? []);
             setTargetId(data.targetId ?? null);
             setProgress(data.progress ?? {});
             setUserName(data.userName ?? 'User');
           }
+        } else {
+          console.log('[AppContext] No existing Firestore doc — will be created on first write');
         }
         setIsReady(true);
       },
       (err) => {
-        console.error('Firestore read error:', err);
+        console.error('[AppContext] Firestore read error:', err.code, err.message);
         setIsReady(true);
       }
     );
@@ -75,14 +86,19 @@ export function AppProvider({ children }) {
 
   /* ── Write to Firestore when data changes ───────────────────────────── */
   useEffect(() => {
+    console.log('[AppContext] Write check — isRealFirebaseUser:', isRealFirebaseUser(user), 'isReady:', isReady, 'scenarios count:', scenarios.length);
     if (!isRealFirebaseUser(user) || !isReady) return;
 
     const ref = getUserDataRef(user.uid);
+    console.log('[AppContext] Writing to Firestore...');
     pendingRef.current = true;
     setDoc(ref, { scenarios, targetId, progress, userName }, { merge: true })
-      .then(() => { pendingRef.current = false; })
+      .then(() => {
+        console.log('[AppContext] Firestore write succeeded');
+        pendingRef.current = false;
+      })
       .catch((err) => {
-        console.error('Firestore write error:', err);
+        console.error('[AppContext] Firestore write error:', err.code, err.message);
         pendingRef.current = false;
       });
   }, [user?.uid, user?.isDemo, isReady, scenarios, targetId, progress, userName]);
