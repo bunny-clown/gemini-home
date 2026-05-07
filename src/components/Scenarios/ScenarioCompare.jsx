@@ -253,7 +253,7 @@ export default function ScenarioCompare() {
     const nums = values.map(v => (v !== null && v !== 'infeasible' ? Number(v) : null));
     const valid = nums.filter(n => n !== null);
     const bestVal = valid.length >= 2 ? Math.max(...valid) : null;
-    const cells = values.map((v, i) => {
+    const cells = values.map(v => {
       if (v === null) return { display: '—', accent: false };
       if (v === 'infeasible') return { display: 'Not achievable', accent: false };
       const accent = bestVal !== null && Number(v) === bestVal;

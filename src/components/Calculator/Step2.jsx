@@ -1,12 +1,7 @@
-import { useMemo, useState, useRef } from 'react';
-import { fmtCurrency, generateId, MONTH_NAMES } from '../../utils/calculations';
-
-function fmtYYYYMM(ym) {
-  if (!ym) return null;
-  const [y, m] = ym.split('-').map(Number);
-  if (!y || !m) return ym;
-  return `${MONTH_NAMES[m - 1]} '${String(y).slice(2)}`;
-}
+import { useMemo, useState, useRef, useEffect } from 'react';
+import { fmtCurrency, fmtYYYYMM, generateId } from '../../utils/calculations';
+import SliderRow from '../Common/SliderRow';
+import Stat from '../Common/Stat';
 
 const DEFAULT = {
   mortgageRate: 6.85,
@@ -19,75 +14,6 @@ const DEFAULT = {
   otherMonthlyExpenses: 5400,
   expenseItems: [],
 };
-
-function SliderRow({ label, value, min, max, step, onChange, display, editable }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  const inputRef = useRef(null);
-
-  const startEdit = () => {
-    if (!editable) return;
-    setDraft(String(value));
-    setEditing(true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-  const commit = () => {
-    const v = parseFloat(draft);
-    if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
-    setEditing(false);
-  };
-
-  return (
-    <div className="ar-slider-row">
-      <div className="ar-slider-header">
-        <span className="ar-label">{label}</span>
-        {editing ? (
-          <input
-            ref={inputRef}
-            type="number"
-            className="ar-input"
-            style={{ width: 120, padding: '2px 8px', fontSize: 14, textAlign: 'right' }}
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-          />
-        ) : (
-          <span
-            className="ar-num"
-            style={{
-              fontWeight: 600, fontSize: 14,
-              cursor: editable ? 'text' : 'default',
-              borderBottom: editable ? '1px dashed var(--ar-muted)' : 'none',
-            }}
-            title={editable ? 'Click to type a value' : undefined}
-            onClick={startEdit}
-          >
-            {display}
-          </span>
-        )}
-      </div>
-      <input
-        type="range"
-        className="ar-slider"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={e => onChange(parseFloat(e.target.value))}
-      />
-    </div>
-  );
-}
-
-function Stat({ label, value, color }) {
-  return (
-    <div className="ar-stat">
-      <div className="ar-stat-label">{label}</div>
-      <div className="ar-stat-value ar-num" style={color ? { color } : {}}>{value}</div>
-    </div>
-  );
-}
 
 function StackedBar({ segments, height = 14, radius = 4 }) {
   const total = segments.reduce((s, x) => s + Math.max(0, x.value), 0) || 1;
@@ -159,7 +85,7 @@ export default function Step2({ data, onChange, step1 }) {
   const incomePct = vals.grossMonthlyIncome > 0 ? (piti.total / vals.grossMonthlyIncome) * 100 : 0;
 
   // Persist piti, monthlyReserves, and otherMonthlyExpenses into data
-  useMemo(() => {
+  useEffect(() => {
     const newOther = expenseItemsTotal;
     if (
       data?.piti !== piti.total ||
@@ -174,6 +100,7 @@ export default function Step2({ data, onChange, step1 }) {
         otherMonthlyExpenses: hasItems ? newOther : vals.otherMonthlyExpenses,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piti.total, monthlyReserves, expenseItemsTotal]);
 
   const pitiSegs = [

@@ -1,4 +1,5 @@
 export const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+export const CLOSING_PCT = 4;
 
 export function fmtCurrency(n, decimals = 0) {
   if (n == null || isNaN(n)) return '$—';
@@ -6,6 +7,12 @@ export function fmtCurrency(n, decimals = 0) {
 }
 export function fmtPct(n, decimals = 2) {
   return `${Number(n).toFixed(decimals)}%`;
+}
+export function fmtYYYYMM(ym) {
+  if (!ym) return null;
+  const [y, m] = ym.split('-').map(Number);
+  if (!y || !m) return ym;
+  return `${MONTH_NAMES[m - 1]} '${String(y).slice(2)}`;
 }
 export function fmtMonthLabel(startMonth, offset) {
   if (!startMonth) return '—';
@@ -285,7 +292,7 @@ export function computeScenarioMetrics(scenario) {
   const downPct = s1.downPct || s2.downPct || 20;
   const loanAmount = homePrice * (1 - downPct / 100);
   const dp = homePrice * downPct / 100;
-  const cc = homePrice * 0.03;
+  const cc = homePrice * CLOSING_PCT / 100;
   const selectedBalance = s1.selectedBalance || 0;
   const leftover = selectedBalance - dp - cc;
 

@@ -13,7 +13,7 @@ const NAV = [
 export default function GlobalHeader() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { user, setShowAuth, setUser, navGuard } = useApp();
+  const { user, setShowAuth, signOut, navGuard } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
 
   function guardedNavigate(path) {
@@ -74,7 +74,7 @@ export default function GlobalHeader() {
               <span className="ar-nav-desktop" style={{ fontSize: 12, color: 'var(--ar-muted)' }}>
                 {user.email || user.displayName}
               </span>
-              <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setUser(null)}>
+              <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={signOut}>
                 Sign out
               </button>
             </>
@@ -112,7 +112,7 @@ export default function GlobalHeader() {
             {user ? (
               <button
                 className="ar-mobile-nav-item"
-                onClick={() => { setUser(null); setMenuOpen(false); }}
+                onClick={() => { signOut(); setMenuOpen(false); }}
               >
                 Sign out
               </button>

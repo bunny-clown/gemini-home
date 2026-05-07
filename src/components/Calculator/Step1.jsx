@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
-import { buildSavingsTimeline, fmtCurrency, fmtMonthLabel, addMonths } from '../../utils/calculations';
+import { buildSavingsTimeline, fmtCurrency, fmtMonthLabel, addMonths, CLOSING_PCT } from '../../utils/calculations';
 import MonthPicker from '../Common/MonthPicker';
+import SliderRow from '../Common/SliderRow';
+import Stat from '../Common/Stat';
 
-const CLOSING_PCT = 4;
 const today = new Date();
 const DEFAULT_START = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
@@ -17,71 +18,6 @@ const DEFAULT = {
   heatmapPriceSteps: 6,
   overrides: {},
 };
-
-// ── Reusable slider row ─────────────────────────────────────────────────────
-function SliderRow({ label, value, min, max, step, onChange, display, editable }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState('');
-  const inputRef = useRef(null);
-
-  const startEdit = () => {
-    if (!editable) return;
-    setDraft(String(value));
-    setEditing(true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  const commit = () => {
-    const v = parseFloat(draft);
-    if (!isNaN(v)) onChange(Math.max(min, Math.min(max, v)));
-    setEditing(false);
-  };
-
-  return (
-    <div className="ar-slider-row">
-      <div className="ar-slider-header">
-        <span className="ar-label">{label}</span>
-        {editing ? (
-          <input
-            ref={inputRef}
-            type="number"
-            className="ar-input"
-            style={{ width: 110, padding: '2px 8px', fontSize: 14, textAlign: 'right' }}
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false); }}
-          />
-        ) : (
-          <span
-            className="ar-num"
-            style={{
-              fontWeight: 600, fontSize: 14,
-              cursor: editable ? 'text' : 'default',
-              borderBottom: editable ? '1px dashed var(--ar-muted)' : 'none',
-            }}
-            title={editable ? 'Click to type a value' : undefined}
-            onClick={startEdit}
-          >
-            {display}
-          </span>
-        )}
-      </div>
-      <input type="range" className="ar-slider"
-        min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))} />
-    </div>
-  );
-}
-
-function Stat({ label, value, color }) {
-  return (
-    <div className="ar-stat">
-      <div className="ar-stat-label">{label}</div>
-      <div className="ar-stat-value ar-num" style={color ? { color } : {}}>{value}</div>
-    </div>
-  );
-}
 
 // ── Editable contribution cell ──────────────────────────────────────────────
 function EditableContrib({ contrib, monthIdx, onOverride }) {
@@ -128,14 +64,13 @@ function EditableContrib({ contrib, monthIdx, onOverride }) {
 }
 
 // ── Savings curve SVG ───────────────────────────────────────────────────────
-function SavingsCurve({ data, startMonth, downPct, selectedMonthIdx, onSelectMonth, onOverride }) {
+function SavingsCurve({ data, startMonth, downPct, selectedMonthIdx, onOverride }) {
   const [popup, setPopup] = useState(null); // idx
 
   const w = 520, h = 240, padBottom = 24;
   const chartH = h - padBottom;
 
   const handleSelectMonth = (idx) => {
-    if (onSelectMonth) onSelectMonth(idx);
     setPopup(popup === idx ? null : idx);
   };
 
@@ -448,7 +383,10 @@ function Heatmap({
 
 // ── Main Step1 ──────────────────────────────────────────────────────────────
 export default function Step1({ data, onChange }) {
-  const vals = { ...DEFAULT, ...data, overrides: data?.overrides || {} };
+  const vals = useMemo(
+    () => ({ ...DEFAULT, ...data, overrides: data?.overrides || {} }),
+    [data]
+  );
   const [view, setView] = useState('graph');
 
   const set = (k, v) => onChange({ ...vals, [k]: v });
@@ -551,7 +489,6 @@ export default function Step1({ data, onChange }) {
                   startMonth={vals.startMonth}
                   downPct={vals.downPct}
                   selectedMonthIdx={vals.buyAtMonth ?? null}
-                  onSelectMonth={null}
                   onOverride={handleOverride}
                 />
               )

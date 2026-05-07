@@ -1,120 +1,94 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 import { generateId } from '../utils/calculations';
-import { auth, db } from '../utils/firebase';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
-import { onAuthStateChanged } from 'firebase/auth';
+import { auth, isFirebaseConfigured } from '../utils/firebase';
+import { loadUserData, saveUserData } from '../utils/firestore';
 
 const AppContext = createContext(null);
 
-function getUserDataRef(uid) {
-  return doc(db, 'users', uid);
+const STORAGE_KEY = 'hpm_scenarios_v1';
+const PROGRESS_KEY = 'hpm_progress_v1';
+
+function loadFromStorage(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+}
+function saveToStorage(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* noop */ }
 }
 
 export function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(isFirebaseConfigured);
   const [showAuth, setShowAuth] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-
-  const [scenarios, setScenarios] = useState([]);
-  const [targetId, setTargetId] = useState(null);
-  const [progress, setProgress] = useState({});
-  const [userName, setUserName] = useState('User');
-
+  const [scenarios, setScenarios] = useState(() => loadFromStorage(STORAGE_KEY, []));
+  const [targetId, setTargetId] = useState(() => loadFromStorage('hpm_target', null));
+  const [progress, setProgress] = useState(() => loadFromStorage(PROGRESS_KEY, {}));
   const [compareIds, setCompareIds] = useState([]);
   const [currentScenario, setCurrentScenario] = useState(null);
   const [navGuard, setNavGuard] = useState(null);
+  const [userName, setUserName] = useState(() => loadFromStorage('hpm_username', 'Emma'));
 
-  // Track the REAL Firebase auth user (not the manually-set one)
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // localStorage — always kept in sync as offline fallback
+  useEffect(() => saveToStorage(STORAGE_KEY, scenarios), [scenarios]);
+  useEffect(() => saveToStorage('hpm_target', targetId), [targetId]);
+  useEffect(() => saveToStorage(PROGRESS_KEY, progress), [progress]);
+  useEffect(() => saveToStorage('hpm_username', userName), [userName]);
 
-  const unsubscribeRef = useRef(null);
-  const pendingRef = useRef(false);
-
-  /* ── Listen to Firebase auth state ─────────────────────────────────── */
+  // Firebase auth state listener — single source of truth for sign-in/out
   useEffect(() => {
-    console.log('[AppContext] Starting Firebase auth listener...');
-    const unsub = onAuthStateChanged(auth, (u) => {
-      console.log('[AppContext] Firebase auth state:', u ? { uid: u.uid, email: u.email } : 'signed out');
-      setFirebaseUser(u);
+    if (!isFirebaseConfigured || !auth) return;
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        const firstName = fbUser.displayName?.split(' ')[0] || fbUser.email?.split('@')[0] || 'Friend';
+        const cloudData = await loadUserData(fbUser.uid);
+        if (cloudData) {
+          setScenarios(cloudData.scenarios ?? []);
+          setProgress(cloudData.progress ?? {});
+          setTargetId(cloudData.targetId ?? null);
+          setUserName(cloudData.userName || firstName);
+        } else {
+          // New user — keep local data, derive name from auth profile
+          setUserName(prev => prev === 'Emma' ? firstName : prev);
+        }
+        setUser(fbUser);
+      } else {
+        setUser(null);
+      }
       setAuthLoading(false);
     });
     return () => unsub();
   }, []);
 
-  /* ── Load from Firestore when user changes ───────────────────────────── */
+  // Debounced Firestore sync whenever cloud-relevant state changes
+  const syncTimerRef = useRef(null);
   useEffect(() => {
-    if (authLoading) return;
+    if (!user || user.isDemo || !isFirebaseConfigured) return;
+    clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      saveUserData(user.uid, { scenarios, progress, targetId, userName });
+    }, 2000);
+    return () => clearTimeout(syncTimerRef.current);
+  }, [user, scenarios, progress, targetId, userName]);
 
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
-
-    if (!firebaseUser?.uid) {
-      console.log('[AppContext] No Firebase user — clearing data');
-      setScenarios([]);
-      setTargetId(null);
-      setProgress({});
-      setUserName('User');
-      setIsReady(true);
+  const signOut = useCallback(async () => {
+    if (user?.isDemo) {
+      setUser(null);
       return;
     }
+    if (isFirebaseConfigured && auth) {
+      await firebaseSignOut(auth);
+      // onAuthStateChanged handles setUser(null)
+    } else {
+      setUser(null);
+    }
+  }, [user]);
 
-    const ref = getUserDataRef(firebaseUser.uid);
-    console.log('[AppContext] Starting Firestore listener for uid:', firebaseUser.uid);
+  const signInDemo = useCallback((displayName = 'Friend') => {
+    const firstName = displayName.trim().split(' ')[0] || 'Friend';
+    setUser({ uid: 'demo', email: 'demo@example.com', displayName: firstName, isDemo: true });
+    setUserName(firstName);
+  }, []);
 
-    unsubscribeRef.current = onSnapshot(
-      ref,
-      (snapshot) => {
-        console.log('[AppContext] Firestore snapshot exists:', snapshot.exists());
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          console.log('[AppContext] Firestore data:', JSON.stringify({ keys: Object.keys(data), scenarioCount: data.scenarios?.length }));
-          if (!pendingRef.current) {
-            setScenarios(data.scenarios ?? []);
-            setTargetId(data.targetId ?? null);
-            setProgress(data.progress ?? {});
-            if (data.userName) setUserName(data.userName);
-          }
-        } else {
-          console.log('[AppContext] No existing doc — first time user');
-        }
-        setIsReady(true);
-      },
-      (err) => {
-        console.error('[AppContext] Firestore read error:', err.code, err.message);
-        setIsReady(true);
-      }
-    );
-
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
-    };
-  }, [firebaseUser?.uid, authLoading]);
-
-  /* ── Write to Firestore when data changes ───────────────────────────── */
-  useEffect(() => {
-    console.log('[AppContext] Write check — firebaseUser?', !!firebaseUser, 'isReady?', isReady, 'scenarios length:', scenarios.length);
-    if (!firebaseUser?.uid || !isReady) return;
-
-    const ref = getUserDataRef(firebaseUser.uid);
-    console.log('[AppContext] Writing to Firestore for uid:', firebaseUser.uid);
-    pendingRef.current = true;
-    setDoc(ref, { scenarios, targetId, progress, userName }, { merge: true })
-      .then(() => {
-        console.log('[AppContext] Firestore write SUCCESS');
-        pendingRef.current = false;
-      })
-      .catch((err) => {
-        console.error('[AppContext] Firestore write FAILED:', err.code, err.message);
-        pendingRef.current = false;
-      });
-  }, [firebaseUser?.uid, isReady, scenarios, targetId, progress, userName]);
-
-  /* ── CRUD operations ────────────────────────────────────────────────── */
   const saveScenario = useCallback((data) => {
     const id = data.id || generateId();
     const ts = Date.now();
@@ -132,9 +106,9 @@ export function AppProvider({ children }) {
 
   const deleteScenario = useCallback((id) => {
     setScenarios(prev => prev.filter(s => s.id !== id));
-    setTargetId(prev => prev === id ? null : prev);
+    if (targetId === id) setTargetId(null);
     setCompareIds(prev => prev.filter(x => x !== id));
-  }, []);
+  }, [targetId]);
 
   const starScenario = useCallback((id) => {
     setTargetId(prev => prev === id ? null : id);
@@ -172,13 +146,10 @@ export function AppProvider({ children }) {
 
   const targetScenario = scenarios.find(s => s.id === targetId) || null;
 
-  // Provide a setUser that does nothing — auth is handled by Firebase state listener
-  const setUser = useCallback(() => {}, []);
-
   return (
     <AppContext.Provider value={{
-      user: firebaseUser,
-      setUser,
+      user, signOut, signInDemo,
+      authLoading,
       showAuth, setShowAuth,
       scenarios, saveScenario, deleteScenario, starScenario,
       targetId, targetScenario,
@@ -189,7 +160,6 @@ export function AppProvider({ children }) {
       reorderScenarios,
       userName, setUserName,
       navGuard, setNavGuard,
-      isReady: isReady && !authLoading,
     }}>
       {children}
     </AppContext.Provider>

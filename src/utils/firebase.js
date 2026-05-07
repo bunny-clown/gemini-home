@@ -1,8 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { Capacitor } from '@capacitor/core';
 
-// Users should replace with their own Firebase config
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'demo-api-key',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'demo.firebaseapp.com',
@@ -25,3 +25,4 @@ try {
 
 export { auth, db, googleProvider };
 export const isFirebaseConfigured = !!import.meta.env.VITE_FIREBASE_API_KEY;
+export const isNativePlatform = Capacitor.isNativePlatform();

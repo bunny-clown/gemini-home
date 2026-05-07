@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { buildRefiSimulation, fmtCurrency, fmtMonthLabel, addMonths, generateId, calcPI, mortgageBalance, monthsBetween } from '../../utils/calculations';
 import MonthPicker from '../Common/MonthPicker';
+import SliderRow from '../Common/SliderRow';
+import Stat from '../Common/Stat';
 
 const today = new Date();
 const DEFAULT_PURCHASE = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 const DEFAULT_REFI = addMonths(DEFAULT_PURCHASE, 24);
-
-const CLOSING_PCT = 4;
 
 const FUND_COLORS = ['#4838f5', '#1fa97a', '#f5b53b', '#c2553a', '#a855f7', '#06b6d4', '#f97316'];
 
@@ -18,29 +18,6 @@ const DEFAULT = {
   fundOrder: [],
   seedOrder: [],
 };
-
-function SliderRow({ label, value, min, max, step, onChange, display }) {
-  return (
-    <div className="ar-slider-row">
-      <div className="ar-slider-header">
-        <span className="ar-label">{label}</span>
-        <span className="ar-num" style={{ fontWeight: 600, fontSize: 14 }}>{display}</span>
-      </div>
-      <input type="range" className="ar-slider"
-        min={min} max={max} step={step} value={value}
-        onChange={e => onChange(parseFloat(e.target.value))} />
-    </div>
-  );
-}
-
-function Stat({ label, value, color }) {
-  return (
-    <div className="ar-stat">
-      <div className="ar-stat-label">{label}</div>
-      <div className="ar-stat-value ar-num" style={color ? { color } : {}}>{value}</div>
-    </div>
-  );
-}
 
 // ── Fund balance chart ──────────────────────────────────────────────────────
 function FundChart({ rows, funds, refiMonth, fundFillMonths, monthlyReserves }) {
@@ -281,7 +258,7 @@ function FundTable({ rows, funds, refiMonth, fundFillMonths }) {
 
 // ── Main Step3 ──────────────────────────────────────────────────────────────
 export default function Step3({ data, onChange, step1, step2 }) {
-  const vals = { ...DEFAULT, ...data };
+  const vals = useMemo(() => ({ ...DEFAULT, ...data }), [data]);
   const set = useCallback((k, v) => onChange({ ...vals, [k]: v }), [vals, onChange]);
 
   const [chartView, setChartView] = useState('chart'); // 'chart' | 'table'
@@ -291,10 +268,6 @@ export default function Step3({ data, onChange, step1, step2 }) {
   const homePrice = step1?.selectedPrice || 650000;
   const downPct = step1?.downPct || 20;
   const loanAmount = homePrice * (1 - downPct / 100);
-  const dp = homePrice * downPct / 100;
-  const closingCosts = homePrice * CLOSING_PCT / 100;
-  // leftover used in banner display below
-  const leftover = (step1?.selectedBalance || 0) - dp - closingCosts; // eslint-disable-line no-unused-vars
   const purchaseRate = step2?.mortgageRate || 6.85;
   const loanTerm = step2?.loanTerm || 30;
   const pitiTotal = step2?.piti || 0;

@@ -137,7 +137,7 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
         {/* Popup tooltip inside SVG */}
         {popupRow && (
           <g>
-            <rect x={tooltipX - 4} y={tooltipY - 2} width={148} height={d => d ? 52 : 52}
+            <rect x={tooltipX - 4} y={tooltipY - 2} width={148} height={52}
               rx={6} fill="var(--ar-bg)" stroke="var(--ar-border)" strokeWidth={1} />
             <text x={tooltipX} y={tooltipY + 12} fontSize="10" fontWeight="700" fill="var(--ar-fg)">
               {popupRow.name}
@@ -168,7 +168,7 @@ export default function TrackProgress() {
   );
 
   const scenario = scenarios.find(s => s.id === selectedId);
-  const s1       = scenario?.step1 || {};
+  const s1       = useMemo(() => scenario?.step1 || {}, [scenario]);
 
   /* Build projection timeline */
   const timeline = useMemo(() => {

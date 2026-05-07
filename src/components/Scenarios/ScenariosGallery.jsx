@@ -1,13 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import GlobalHeader from '../Common/GlobalHeader';
 import { fmtCurrency, calcPI, buildRefiSimulation, mortgageBalance, monthsBetween, fmtMonthLabel } from '../../utils/calculations';
-
-function fmtMonth(dateStr) {
-  if (!dateStr) return '—';
-  return fmtMonthLabel(dateStr, 0); // e.g. "Jul 26"
-}
 
 function Row({ label, value, valueStyle }) {
   return (
@@ -161,7 +156,6 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
   const monthlyReserves = s2.monthlyReserves || Math.max(0, grossIncome - otherExp - piti);
 
   const monthlyContrib = s1.monthlyContrib || 0;
-  const buyAtMonth = s1.buyAtMonth ?? null;
 
   const refiDate = s3.refiDate || '';
   const customFunds = s3.customFunds || [];
@@ -219,7 +213,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
           <div>
             <ModalSection title="SAVINGS PLAN">
               <MR label="Monthly saving" value={monthlyContrib ? fmtCurrency(monthlyContrib) : '—'} />
-              <MR label="First available" value={fmtMonth(purchaseMonth)} />
+              <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
             </ModalSection>
             <ModalSection title="PURCHASE">
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
@@ -275,7 +269,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
           {tab === 'overview' && <>
             <ModalSection title="SAVINGS PLAN">
               <MR label="Monthly saving" value={monthlyContrib ? fmtCurrency(monthlyContrib) : '—'} />
-              <MR label="First available" value={fmtMonth(purchaseMonth)} />
+              <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
             </ModalSection>
             <ModalSection title="PURCHASE">
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
@@ -345,7 +339,11 @@ export default function ScenariosGallery() {
   const navigate = useNavigate();
   const location = useLocation();
   const { scenarios, deleteScenario, starScenario, targetId, updateNote, reorderScenarios } = useApp();
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    const openParam = params.get('open');
+    return openParam && scenarios.find(s => s.id === openParam) ? openParam : null;
+  });
   const [deleteId, setDeleteId] = useState(null);
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
@@ -373,14 +371,6 @@ export default function ScenariosGallery() {
     setDragId(null);
     setDragOverId(null);
   }
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const openParam = params.get('open');
-    if (openParam && scenarios.find(s => s.id === openParam)) {
-      setOpenId(openParam);
-    }
-  }, [location.search, scenarios]);
 
   const openScenario = scenarios.find(s => s.id === openId);
   const deleteScenario_ = scenarios.find(s => s.id === deleteId);
