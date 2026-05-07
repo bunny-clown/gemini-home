@@ -50,15 +50,32 @@ export default function AuthModal() {
     if (!isFirebaseConfigured) { handleDemo(); return; }
 
     if (isCapacitor) {
-      // With skipNativeAuth: true, the plugin opens web-based Google Sign-In
-      // which directly signs in the web Firebase SDK
       try {
         console.log('Web-based Google Sign-In via plugin...');
-        await FirebaseAuthentication.signInWithGoogle();
-        // Modal closes, onAuthStateChanged in AppContext will pick up the user
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        console.log('Plugin result:', JSON.stringify({ credentialKeys: Object.keys(result.credential || {}), userUid: result.user?.uid }));
+
+        const idToken = result.credential?.idToken;
+        const accessToken = result.credential?.accessToken;
+
+        if (!idToken) {
+          console.error('No idToken in plugin result');
+          setError('Sign-in failed: no token');
+          return;
+        }
+
+        console.log('Got Google idToken, signing in web SDK...');
+        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+        const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
+        const webResult = await signInWithCredential(auth, credential);
+        console.log('Web SDK sign-in success:', webResult.user.uid);
+
+        const firstName = webResult.user.displayName?.split(' ')[0] || '';
+        if (firstName) setUserName(firstName);
+        setUser(webResult.user);
         setShowAuth(false);
       } catch (err) {
-        console.error('Web sign-in error:', err.code, err.message);
+        console.error('Sign-in error:', err.code, err.message);
         setError(err.message || 'Google sign-in failed');
       }
       return;
