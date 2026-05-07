@@ -1,34 +1,93 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { generateId } from '../utils/calculations';
+import { db } from '../utils/firebase';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 const AppContext = createContext(null);
 
-const STORAGE_KEY = 'hpm_scenarios_v1';
-const PROGRESS_KEY = 'hpm_progress_v1';
-
-function loadFromStorage(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
-}
-function saveToStorage(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* noop */ }
+/* ─── Firestore helpers ────────────────────────────────────────────────── */
+function getUserDataRef(uid) {
+  return doc(db, 'users', uid);
 }
 
+function isRealFirebaseUser(u) {
+  return u?.uid && !u.isDemo && db;
+}
+
+/* ─── Component ────────────────────────────────────────────────────────── */
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
-  const [scenarios, setScenarios] = useState(() => loadFromStorage(STORAGE_KEY, []));
-  const [targetId, setTargetId] = useState(() => loadFromStorage('hpm_target', null));
-  const [progress, setProgress] = useState(() => loadFromStorage(PROGRESS_KEY, {}));
+  const [isReady, setIsReady] = useState(false);
+
+  const [scenarios, setScenarios] = useState([]);
+  const [targetId, setTargetId] = useState(null);
+  const [progress, setProgress] = useState({});
+  const [userName, setUserName] = useState('User');
+
   const [compareIds, setCompareIds] = useState([]);
   const [currentScenario, setCurrentScenario] = useState(null);
-  const [navGuard, setNavGuard] = useState(null); // fn(proceed) | null
-  const [userName, setUserName] = useState(() => loadFromStorage('hpm_username', 'Emma'));
+  const [navGuard, setNavGuard] = useState(null);
 
-  useEffect(() => saveToStorage(STORAGE_KEY, scenarios), [scenarios]);
-  useEffect(() => saveToStorage('hpm_target', targetId), [targetId]);
-  useEffect(() => saveToStorage(PROGRESS_KEY, progress), [progress]);
-  useEffect(() => saveToStorage('hpm_username', userName), [userName]);
+  const unsubscribeRef = useRef(null);
+  const pendingRef = useRef(false);
 
+  /* ── Load from Firestore when real user changes ───────────────────── */
+  useEffect(() => {
+    if (!isRealFirebaseUser(user)) {
+      setIsReady(true);
+      return;
+    }
+
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
+    const ref = getUserDataRef(user.uid);
+    unsubscribeRef.current = onSnapshot(
+      ref,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (!pendingRef.current) {
+            setScenarios(data.scenarios ?? []);
+            setTargetId(data.targetId ?? null);
+            setProgress(data.progress ?? {});
+            setUserName(data.userName ?? 'User');
+          }
+        }
+        setIsReady(true);
+      },
+      (err) => {
+        console.error('Firestore read error:', err);
+        setIsReady(true);
+      }
+    );
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [user?.uid, user?.isDemo]);
+
+  /* ── Write to Firestore when data changes ───────────────────────────── */
+  useEffect(() => {
+    if (!isRealFirebaseUser(user) || !isReady) return;
+
+    const ref = getUserDataRef(user.uid);
+    pendingRef.current = true;
+    setDoc(ref, { scenarios, targetId, progress, userName }, { merge: true })
+      .then(() => { pendingRef.current = false; })
+      .catch((err) => {
+        console.error('Firestore write error:', err);
+        pendingRef.current = false;
+      });
+  }, [user?.uid, user?.isDemo, isReady, scenarios, targetId, progress, userName]);
+
+  /* ── CRUD operations ──────────────────────────────────────────────── */
   const saveScenario = useCallback((data) => {
     const id = data.id || generateId();
     const ts = Date.now();
@@ -46,9 +105,9 @@ export function AppProvider({ children }) {
 
   const deleteScenario = useCallback((id) => {
     setScenarios(prev => prev.filter(s => s.id !== id));
-    if (targetId === id) setTargetId(null);
+    setTargetId(prev => prev === id ? null : prev);
     setCompareIds(prev => prev.filter(x => x !== id));
-  }, [targetId]);
+  }, []);
 
   const starScenario = useCallback((id) => {
     setTargetId(prev => prev === id ? null : id);
@@ -99,6 +158,7 @@ export function AppProvider({ children }) {
       reorderScenarios,
       userName, setUserName,
       navGuard, setNavGuard,
+      isReady,
     }}>
       {children}
     </AppContext.Provider>
