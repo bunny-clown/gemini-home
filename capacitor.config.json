@@ -1,5 +1,10 @@
 {
   "appId": "com.geminihome.app",
   "appName": "Gemini Home",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false
+    }
+  }
 }

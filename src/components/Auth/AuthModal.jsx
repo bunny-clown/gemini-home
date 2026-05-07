@@ -3,7 +3,7 @@ import { useApp } from '../../contexts/AppContext';
 import { auth, googleProvider, isFirebaseConfigured } from '../../utils/firebase';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
-const isCapacitor = typeof window !== 'undefined' && !!(window.Capacitor?.isNative);
+const isCapacitor = typeof window !== 'undefined' && !!(window.Capacitor?.isNativePlatform?.());
 
 export default function AuthModal() {
   const { setShowAuth, setUser, setUserName } = useApp();
@@ -46,11 +46,14 @@ export default function AuthModal() {
   };
 
   const handleGoogle = async () => {
+    console.log('handleGoogle called. isCapacitor:', isCapacitor, 'Capacitor:', window.Capacitor);
     if (!isFirebaseConfigured) { handleDemo(); return; }
     if (isCapacitor) {
       // Use native Google Sign-In via Capacitor plugin
       try {
+        console.log('Trying native signInWithGoogle...');
         const result = await FirebaseAuthentication.signInWithGoogle();
+        console.log('Native signInWithGoogle result:', result);
         if (result.user) {
           const firstName = result.user.displayName?.split(' ')[0] || '';
           if (firstName) setUserName(firstName);
@@ -58,6 +61,7 @@ export default function AuthModal() {
           setShowAuth(false);
         }
       } catch (err) {
+        console.error('Native signInWithGoogle error:', err);
         setError(err.message || 'Google sign-in failed');
       }
       return;
