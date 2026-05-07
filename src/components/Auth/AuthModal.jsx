@@ -72,13 +72,16 @@ export default function AuthModal() {
 
         // Fallback: get fresh ID token from plugin and sign in web SDK
         console.log('Fallback: getting fresh ID token from plugin...');
-        const { idToken: freshIdToken } = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
-        console.log('Fresh ID token received:', freshIdToken ? freshIdToken.slice(0, 30) + '...' : 'null');
+        const tokenResult = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
+        console.log('Raw getIdToken result keys:', Object.keys(tokenResult));
+        console.log('Raw getIdToken result:', JSON.stringify({ tokenPrefix: tokenResult.token?.slice(0, 20), idTokenPrefix: tokenResult.idToken?.slice(0, 20) }));
+        const freshToken = tokenResult.token || tokenResult.idToken;
+        console.log('Fresh token extracted:', freshToken ? freshToken.slice(0, 30) + '...' : 'null');
 
-        if (freshIdToken) {
+        if (freshToken) {
           console.log('Trying signInWithCredential with fresh token...');
           const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-          const credential = GoogleAuthProvider.credential(freshIdToken);
+          const credential = GoogleAuthProvider.credential(freshToken);
           try {
             const webResult = await signInWithCredential(auth, credential);
             console.log('Manual sign-in success:', webResult.user.uid);
@@ -87,7 +90,7 @@ export default function AuthModal() {
             console.error('Full error:', credErr);
           }
         } else {
-          console.error('No fresh ID token available');
+          console.error('No fresh token available');
         }
       } catch (err) {
         console.error('Native sign-in error:', err.code, err.message);
