@@ -52,10 +52,37 @@ export default function AuthModal() {
     if (isCapacitor) {
       try {
         console.log('Native signInWithGoogle...');
-        await FirebaseAuthentication.signInWithGoogle();
-        // The plugin auto-syncs to web SDK with skipNativeAuth: false
-        // AppContext.jsx onAuthStateChanged will pick up the user
+        const nativeResult = await FirebaseAuthentication.signInWithGoogle();
+        console.log('Native result uid:', nativeResult.user?.uid);
         setShowAuth(false);
+
+        // Wait for plugin auto-sync to web SDK (up to 5 seconds)
+        console.log('Waiting for web SDK auth state...');
+        const { getAuth } = await import('firebase/auth');
+        const webAuth = getAuth();
+        for (let i = 0; i < 10; i++) {
+          await new Promise(r => setTimeout(r, 500));
+          if (webAuth.currentUser) {
+            console.log('Web SDK auto-synced! uid:', webAuth.currentUser.uid);
+            return;
+          }
+        }
+        console.warn('Web SDK did not auto-sync after 5 seconds');
+
+        // Fallback: manual sign-in with native credential
+        const idToken = nativeResult.credential?.idToken;
+        const accessToken = nativeResult.credential?.accessToken;
+        if (idToken) {
+          console.log('Trying manual signInWithCredential...');
+          const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+          const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
+          try {
+            const webResult = await signInWithCredential(auth, credential);
+            console.log('Manual sign-in success:', webResult.user.uid);
+          } catch (credErr) {
+            console.error('Manual sign-in failed:', credErr.code, credErr.message);
+          }
+        }
       } catch (err) {
         console.error('Native sign-in error:', err.code, err.message);
         setError(err.message || 'Google sign-in failed');
