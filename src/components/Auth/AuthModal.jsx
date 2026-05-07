@@ -56,35 +56,42 @@ export default function AuthModal() {
         console.log('Native result uid:', nativeResult.user?.uid);
         setShowAuth(false);
 
-        // Wait for plugin auto-sync to web SDK (up to 5 seconds)
+        // Wait for plugin auto-sync to web SDK
         console.log('Waiting for web SDK auth state...');
         const { getAuth } = await import('firebase/auth');
         const webAuth = getAuth();
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 20; i++) {
           await new Promise(r => setTimeout(r, 500));
+          console.log(`Poll ${i + 1}: webAuth.currentUser =`, webAuth.currentUser?.uid || 'null');
           if (webAuth.currentUser) {
             console.log('Web SDK auto-synced! uid:', webAuth.currentUser.uid);
             return;
           }
         }
-        console.warn('Web SDK did not auto-sync after 5 seconds');
+        console.warn('Web SDK did not auto-sync after 10 seconds');
 
-        // Fallback: manual sign-in with native credential
-        const idToken = nativeResult.credential?.idToken;
-        const accessToken = nativeResult.credential?.accessToken;
-        if (idToken) {
-          console.log('Trying manual signInWithCredential...');
+        // Fallback: get fresh ID token from plugin and sign in web SDK
+        console.log('Fallback: getting fresh ID token from plugin...');
+        const { idToken: freshIdToken } = await FirebaseAuthentication.getIdToken({ forceRefresh: true });
+        console.log('Fresh ID token received:', freshIdToken ? freshIdToken.slice(0, 30) + '...' : 'null');
+
+        if (freshIdToken) {
+          console.log('Trying signInWithCredential with fresh token...');
           const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-          const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
+          const credential = GoogleAuthProvider.credential(freshIdToken);
           try {
             const webResult = await signInWithCredential(auth, credential);
             console.log('Manual sign-in success:', webResult.user.uid);
           } catch (credErr) {
             console.error('Manual sign-in failed:', credErr.code, credErr.message);
+            console.error('Full error:', credErr);
           }
+        } else {
+          console.error('No fresh ID token available');
         }
       } catch (err) {
         console.error('Native sign-in error:', err.code, err.message);
+        console.error('Full error:', err);
         setError(err.message || 'Google sign-in failed');
       }
       return;
