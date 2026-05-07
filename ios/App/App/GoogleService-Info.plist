@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>256312928989-ku43e6de1jetvkkjhe5ie4d8jjsuut92.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.256312928989-ku43e6de1jetvkkjhe5ie4d8jjsuut92</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAbP_9Su0TtbEEfQpod9805WLPsr_HtN9M</string>
+	<key>GCM_SENDER_ID</key>
+	<string>256312928989</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.geminihome.app</string>
+	<key>PROJECT_ID</key>
+	<string>geminihomepurchase</string>
+	<key>STORAGE_BUCKET</key>
+	<string>geminihomepurchase.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:256312928989:ios:65394079a2a7fafe2e4934</string>
+</dict>
+</plist>

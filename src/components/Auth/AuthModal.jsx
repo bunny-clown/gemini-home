@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { auth, googleProvider, isFirebaseConfigured } from '../../utils/firebase';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 const isCapacitor = typeof window !== 'undefined' && !!(window.Capacitor?.isNative);
 
@@ -47,9 +48,21 @@ export default function AuthModal() {
   const handleGoogle = async () => {
     if (!isFirebaseConfigured) { handleDemo(); return; }
     if (isCapacitor) {
-      setError('Google Sign-In requires the native app build. Use email/password or "Continue (local only)".');
+      // Use native Google Sign-In via Capacitor plugin
+      try {
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        if (result.user) {
+          const firstName = result.user.displayName?.split(' ')[0] || '';
+          if (firstName) setUserName(firstName);
+          setUser(result.user);
+          setShowAuth(false);
+        }
+      } catch (err) {
+        setError(err.message || 'Google sign-in failed');
+      }
       return;
     }
+    // Web: use Firebase popup
     try {
       const { signInWithPopup } = await import('firebase/auth');
       const result = await signInWithPopup(auth, googleProvider);
@@ -93,7 +106,7 @@ export default function AuthModal() {
           {/* Google */}
           <button
             onClick={handleGoogle}
-            disabled={isCapacitor || !isFirebaseConfigured}
+            disabled={!isFirebaseConfigured}
             className="ar-btn ar-btn-ghost"
             style={{
               width: '100%',
@@ -101,8 +114,8 @@ export default function AuthModal() {
               alignItems: 'center',
               justifyContent: 'center',
               gap: 10,
-              opacity: isCapacitor ? 0.5 : 1,
-              cursor: isCapacitor ? 'not-allowed' : 'pointer',
+              opacity: !isFirebaseConfigured ? 0.5 : 1,
+              cursor: !isFirebaseConfigured ? 'not-allowed' : 'pointer',
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24">
@@ -111,7 +124,7 @@ export default function AuthModal() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            {isCapacitor ? 'Google Sign-In unavailable in app' : 'Continue with Google'}
+            Continue with Google
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
