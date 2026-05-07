@@ -343,6 +343,84 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-home-title { font-size: 36px !important; }
 }
 
+/* ── Home target card ── */
+.ar-home-target {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.ar-home-target-body {
+  flex: 1;
+  padding: 28px 32px;
+}
+.ar-home-target-price {
+  font-size: 52px;
+  line-height: 1;
+  margin: 0 0 4px;
+}
+.ar-home-target-name {
+  color: var(--ar-muted);
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+.ar-home-target-stats {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.ar-home-target-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 40px;
+  border-left: 1px solid var(--ar-border);
+  align-self: stretch;
+}
+.ar-home-target-saved {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.ar-home-target-needed {
+  font-size: 12px;
+  color: var(--ar-muted);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .ar-home-target { flex-direction: column; align-items: stretch; max-width: 100%; }
+  .ar-home-target-body { padding: 16px 16px 12px; }
+  .ar-home-target-price { font-size: 28px !important; }
+  .ar-home-target-name { margin-bottom: 12px; font-size: 13px; }
+  .ar-home-target-stats { gap: 16px; }
+  /* Progress ring on mobile */
+  .ar-home-target-ring svg { width: 80px; height: 80px; }
+  .ar-home-target-ring { 
+    padding: 14px 16px;
+    border-left: none;
+    border-top: 1px solid var(--ar-border);
+    align-self: auto;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+  }
+  .ar-home-target-ring .ar-label {
+    display: none;
+  }
+  .ar-home-target-saved {
+    font-size: 16px;
+    margin-top: 2px;
+  }
+  .ar-home-target-needed {
+    font-size: 11px;
+  }
+}
+
 /* ── Mobile savings chart height ── */
 @media (max-width: 600px) {
   .ar-savings-chart { min-height: 260px !important; }

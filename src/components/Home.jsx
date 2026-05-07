@@ -9,14 +9,15 @@ function ProgressRing({ pct, size = 100, stroke = 9 }) {
   const c = 2 * Math.PI * r;
   const off = c * (1 - pct / 100);
   return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size/2} cy={size/2} r={r} stroke="rgba(0,0,0,0.07)" strokeWidth={stroke} fill="none" />
-      <circle cx={size/2} cy={size/2} r={r} stroke="var(--ar-accent)" strokeWidth={stroke} fill="none"
-        strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(.2,.7,.2,1)' }} />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible', display: 'block' }}>
+      <g transform={`rotate(-90 ${size/2} ${size/2})`}>
+        <circle cx={size/2} cy={size/2} r={r} stroke="rgba(0,0,0,0.07)" strokeWidth={stroke} fill="none" />
+        <circle cx={size/2} cy={size/2} r={r} stroke="var(--ar-accent)" strokeWidth={stroke} fill="none"
+          strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(.2,.7,.2,1)' }} />
+      </g>
       <text x={size/2} y={size/2} textAnchor="middle" dy="0.36em"
-        style={{ transform: 'rotate(90deg)', transformOrigin: 'center', fontSize: 16, fontWeight: 700,
-          fill: 'var(--ar-fg)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</text>
+        style={{ fontSize: 16, fontWeight: 700, fill: 'var(--ar-fg)', fontVariantNumeric: 'tabular-nums' }}>{pct}%</text>
     </svg>
   );
 }
@@ -125,37 +126,45 @@ export default function Home() {
           </p>
 
           {/* Current target card */}
-          {t && targetPrice && (
-            <div className="ar-card" style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 0, padding: 0, overflow: 'hidden' }}>
-              <div style={{ flex: 1, padding: '28px 32px' }}>
+          {t && targetPrice ? (
+            <div className="ar-card ar-home-target" style={{ marginBottom: 28 }}>
+              <div className="ar-home-target-body">
                 <div className="ar-label" style={{ marginBottom: 8 }}>Current target</div>
-                <div className="ar-display ar-num" style={{ fontSize: 52, lineHeight: 1, margin: '0 0 4px' }}>
+                <div className="ar-display ar-num ar-home-target-price">
                   {fmtCurrency(targetPrice)}
                 </div>
-                <div style={{ color: 'var(--ar-muted)', marginBottom: 24, fontSize: 14 }}>{t.name}</div>
-                <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+                <div className="ar-home-target-name">{t.name}</div>
+                <div className="ar-home-target-stats">
                   {targetPITI && <StatItem label="PITI" value={fmtCurrency(targetPITI)} />}
                   <StatItem label="DOWN" value={`${targetDown}%`} />
                   {targetReadyIn != null && <StatItem label="READY IN" value={`${targetReadyIn} mo`} />}
                   {targetRate && <StatItem label="RATE" value={`${targetRate}%`} />}
                 </div>
               </div>
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: 6, padding: '28px 40px', borderLeft: '1px solid var(--ar-border)',
-                alignSelf: 'stretch',
-              }}>
+              <div className="ar-home-target-ring">
                 <div className="ar-label" style={{ letterSpacing: '0.1em', marginBottom: 6 }}>DOWN PAYMENT</div>
-                <ProgressRing pct={progressPct} size={130} />
-                <div className="ar-num" style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>
+                <ProgressRing pct={progressPct} />
+                <div className="ar-num ar-home-target-saved">
                   {fmtCurrency(savedAmount)}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--ar-muted)', textAlign: 'center' }}>
+                <div className="ar-home-target-needed">
                   of {fmtCurrency(dpNeeded)} needed
                 </div>
               </div>
             </div>
-          )}
+          ) : hasScenarios ? (
+            <div className="ar-card" style={{ marginBottom: 28, padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <div className="ar-label" style={{ marginBottom: 6 }}>No target selected</div>
+                <div style={{ fontSize: 15, color: 'var(--ar-muted)' }}>
+                  You have {scenarios.length} saved scenario{scenarios.length !== 1 ? 's' : ''}. Set one as your target to see it here.
+                </div>
+              </div>
+              <button className="ar-btn ar-btn-accent" onClick={() => navigate('/scenarios')}>
+                Set a target →
+              </button>
+            </div>
+          ) : null}
 
           {/* Quick action tiles */}
           <div className="ar-grid-4">
