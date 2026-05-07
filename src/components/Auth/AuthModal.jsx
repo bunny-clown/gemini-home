@@ -54,11 +54,15 @@ export default function AuthModal() {
         // Step 1: Native Google Sign-In
         console.log('Step 1: Native signInWithGoogle...');
         const nativeResult = await FirebaseAuthentication.signInWithGoogle();
-        console.log('Native result:', JSON.stringify({ uid: nativeResult.user?.uid, hasCredential: !!nativeResult.credential }));
+        console.log('Native result user:', JSON.stringify(nativeResult.user));
+        console.log('Native result credential:', JSON.stringify(nativeResult.credential));
 
         // Step 2: Extract credential tokens from native result
         const idToken = nativeResult.credential?.idToken || nativeResult.user?.idToken;
         const accessToken = nativeResult.credential?.accessToken;
+
+        console.log('Extracted idToken:', idToken ? idToken.slice(0, 20) + '...' : 'MISSING');
+        console.log('Extracted accessToken:', accessToken ? accessToken.slice(0, 20) + '...' : 'MISSING');
 
         if (!idToken) {
           console.error('No ID token from native sign-in');
@@ -70,6 +74,7 @@ export default function AuthModal() {
         console.log('Step 2: Signing in web SDK with native credential...');
         const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
         const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
+        console.log('Credential object created:', !!credential);
         const webResult = await signInWithCredential(auth, credential);
         console.log('Web sign-in success:', webResult.user.uid);
 
@@ -78,7 +83,10 @@ export default function AuthModal() {
         setUser(webResult.user);
         setShowAuth(false);
       } catch (err) {
-        console.error('Google sign-in error:', err.code, err.message);
+        console.error('Google sign-in FULL error:', err);
+        console.error('Error code:', err.code);
+        console.error('Error message:', err.message);
+        console.error('Error customData:', err.customData);
         setError(err.message || 'Google sign-in failed');
       }
       return;
