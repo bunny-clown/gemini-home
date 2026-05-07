@@ -51,42 +51,13 @@ export default function AuthModal() {
 
     if (isCapacitor) {
       try {
-        // Step 1: Native Google Sign-In
-        console.log('Step 1: Native signInWithGoogle...');
-        const nativeResult = await FirebaseAuthentication.signInWithGoogle();
-        console.log('Native result user:', JSON.stringify(nativeResult.user));
-        console.log('Native result credential:', JSON.stringify(nativeResult.credential));
-
-        // Step 2: Extract credential tokens from native result
-        const idToken = nativeResult.credential?.idToken || nativeResult.user?.idToken;
-        const accessToken = nativeResult.credential?.accessToken;
-
-        console.log('Extracted idToken:', idToken ? idToken.slice(0, 20) + '...' : 'MISSING');
-        console.log('Extracted accessToken:', accessToken ? accessToken.slice(0, 20) + '...' : 'MISSING');
-
-        if (!idToken) {
-          console.error('No ID token from native sign-in');
-          setError('Google sign-in failed: no token');
-          return;
-        }
-
-        // Step 3: Sign in the WEB Firebase SDK with the native credential
-        console.log('Step 2: Signing in web SDK with native credential...');
-        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-        const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
-        console.log('Credential object created:', !!credential);
-        const webResult = await signInWithCredential(auth, credential);
-        console.log('Web sign-in success:', webResult.user.uid);
-
-        const firstName = webResult.user.displayName?.split(' ')[0] || '';
-        if (firstName) setUserName(firstName);
-        setUser(webResult.user);
+        console.log('Native signInWithGoogle...');
+        await FirebaseAuthentication.signInWithGoogle();
+        // The plugin auto-syncs to web SDK with skipNativeAuth: false
+        // AppContext.jsx onAuthStateChanged will pick up the user
         setShowAuth(false);
       } catch (err) {
-        console.error('Google sign-in FULL error:', err);
-        console.error('Error code:', err.code);
-        console.error('Error message:', err.message);
-        console.error('Error customData:', err.customData);
+        console.error('Native sign-in error:', err.code, err.message);
         setError(err.message || 'Google sign-in failed');
       }
       return;
