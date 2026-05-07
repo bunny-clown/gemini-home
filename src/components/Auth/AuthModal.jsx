@@ -46,35 +46,44 @@ export default function AuthModal() {
   };
 
   const handleGoogle = async () => {
-    console.log('handleGoogle called. isCapacitor:', isCapacitor, 'Capacitor:', window.Capacitor);
+    console.log('handleGoogle called. isCapacitor:', isCapacitor);
     if (!isFirebaseConfigured) { handleDemo(); return; }
+
     if (isCapacitor) {
-      // Use native Google Sign-In via Capacitor plugin
       try {
-        console.log('Trying native signInWithGoogle...');
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        console.log('Native signInWithGoogle result:', result);
-        console.log('Native user uid:', result.user?.uid);
+        // Step 1: Native Google Sign-In
+        console.log('Step 1: Native signInWithGoogle...');
+        const nativeResult = await FirebaseAuthentication.signInWithGoogle();
+        console.log('Native result:', JSON.stringify({ uid: nativeResult.user?.uid, hasCredential: !!nativeResult.credential }));
 
-        // The native plugin also signs in the web SDK — prefer that user
-        const { getAuth } = await import('firebase/auth');
-        const webAuth = getAuth();
-        const webUser = webAuth.currentUser;
-        console.log('Web auth currentUser:', webUser?.uid);
+        // Step 2: Extract credential tokens from native result
+        const idToken = nativeResult.credential?.idToken || nativeResult.user?.idToken;
+        const accessToken = nativeResult.credential?.accessToken;
 
-        const finalUser = webUser || result.user;
-        if (finalUser) {
-          const firstName = finalUser.displayName?.split(' ')[0] || '';
-          if (firstName) setUserName(firstName);
-          setUser(finalUser);
-          setShowAuth(false);
+        if (!idToken) {
+          console.error('No ID token from native sign-in');
+          setError('Google sign-in failed: no token');
+          return;
         }
+
+        // Step 3: Sign in the WEB Firebase SDK with the native credential
+        console.log('Step 2: Signing in web SDK with native credential...');
+        const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+        const credential = GoogleAuthProvider.credential(idToken, accessToken || undefined);
+        const webResult = await signInWithCredential(auth, credential);
+        console.log('Web sign-in success:', webResult.user.uid);
+
+        const firstName = webResult.user.displayName?.split(' ')[0] || '';
+        if (firstName) setUserName(firstName);
+        setUser(webResult.user);
+        setShowAuth(false);
       } catch (err) {
-        console.error('Native signInWithGoogle error:', err);
+        console.error('Google sign-in error:', err.code, err.message);
         setError(err.message || 'Google sign-in failed');
       }
       return;
     }
+
     // Web: use Firebase popup
     try {
       const { signInWithPopup } = await import('firebase/auth');
