@@ -50,7 +50,7 @@ export default function AuthModal() {
     setError('');
     try {
       if (isNativePlatform) {
-        const result = await FirebaseAuthentication.signInWithGoogle();
+        const result = await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true });
         const credential = GoogleAuthProvider.credential(result.credential?.idToken);
         await signInWithCredential(auth, credential);
       } else {
