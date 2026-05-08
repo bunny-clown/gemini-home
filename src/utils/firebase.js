@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 
@@ -19,6 +19,9 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
   googleProvider = new GoogleAuthProvider();
+  if (Capacitor.isNativePlatform()) {
+    setPersistence(auth, browserLocalPersistence);
+  }
 } catch {
   console.warn('Firebase init skipped (demo mode)');
 }
