@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { initializeAuth, getAuth, GoogleAuthProvider, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 
@@ -12,20 +12,21 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:000000000:web:000000000',
 };
 
+export const isNativePlatform = Capacitor.isNativePlatform();
+export const isFirebaseConfigured = !!import.meta.env.VITE_FIREBASE_API_KEY;
+
 let app, auth, db, googleProvider;
 
 try {
   app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  // On native (Capacitor/WKWebView), IndexedDB hangs — use localStorage from the start
+  auth = isNativePlatform
+    ? initializeAuth(app, { persistence: browserLocalPersistence })
+    : getAuth(app);
   db = getFirestore(app);
   googleProvider = new GoogleAuthProvider();
-  if (Capacitor.isNativePlatform()) {
-    setPersistence(auth, browserLocalPersistence);
-  }
 } catch {
   console.warn('Firebase init skipped (demo mode)');
 }
 
 export { auth, db, googleProvider };
-export const isFirebaseConfigured = !!import.meta.env.VITE_FIREBASE_API_KEY;
-export const isNativePlatform = Capacitor.isNativePlatform();
