@@ -51,8 +51,11 @@ export default function AuthModal() {
     try {
       if (isNativePlatform) {
         const result = await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true });
+        console.log('[Google] idToken:', result.credential?.idToken ? 'present' : 'MISSING');
+        console.log('[Google] accessToken:', result.credential?.accessToken ? 'present' : 'MISSING');
         const credential = GoogleAuthProvider.credential(result.credential?.idToken);
-        await signInWithCredential(auth, credential);
+        const webResult = await signInWithCredential(auth, credential);
+        console.log('[Google] signInWithCredential success:', webResult.user?.uid);
       } else {
         await signInWithPopup(auth, googleProvider);
       }
