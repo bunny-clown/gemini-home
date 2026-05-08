@@ -62,6 +62,8 @@ export default function AuthModal() {
       // onAuthStateChanged loads cloud data and sets user + userName
       setShowAuth(false);
     } catch (err) {
+      console.log('[Google] error code:', err.code);
+      console.log('[Google] error message:', err.message);
       setError(err.message || 'Google sign-in failed');
     }
   };
