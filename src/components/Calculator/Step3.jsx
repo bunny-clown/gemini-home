@@ -481,6 +481,7 @@ export default function Step3({ data, onChange, step1, step2 }) {
               step={25}
               onChange={v => set('targetPayment', v)}
               display={fmtCurrency(vals.targetPayment || Math.round(currentPI * 0.85 / 50) * 50)}
+              editable
             />
             <SliderRow
               label="Test interest rate"
@@ -488,6 +489,7 @@ export default function Step3({ data, onChange, step1, step2 }) {
               min={3} max={9} step={0.05}
               onChange={v => set('testRefiRate', v)}
               display={`${vals.testRefiRate.toFixed(2)}%`}
+              editable
             />
           </div>
 

@@ -1,8 +1,8 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GlobalHeader from '../Common/GlobalHeader';
 import { useApp } from '../../contexts/AppContext';
-import { buildSavingsTimeline, fmtCurrency, monthsBetween } from '../../utils/calculations';
+import { buildSavingsTimeline, fmtCurrency, fmtMonthLabel, monthsBetween } from '../../utils/calculations';
 
 
 /* ─── KPI card ─────────────────────────────────────────────────────────── */
@@ -33,7 +33,7 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
   const maxVal    = Math.max(...allVals) * 1.05;
   const range     = maxVal - minVal || 1;
 
-  const padB = 24; // room for x-axis labels
+  const padB = 24;
   const pad = { l: 20, r: 20, t: 12, b: padB };
   const W   = width  - pad.l - pad.r;
   const H   = height - pad.t - pad.b;
@@ -56,7 +56,6 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
     .map((pt, j) => `${j === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`)
     .join(' ');
 
-  // X-axis label every ~5 points
   const labelStep = Math.max(1, Math.round(data.length / 6));
   const labelIdxs = [];
   for (let i = 0; i < data.length; i += labelStep) labelIdxs.push(i);
@@ -78,16 +77,10 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
           </linearGradient>
         </defs>
 
-        {/* Projected area fill */}
         <path d={projArea} fill="url(#tpProjGrad)" />
-
-        {/* Projected dashed line */}
         <path d={projPath} fill="none" stroke="var(--ar-accent)" strokeWidth={1.5} strokeDasharray="5 3" opacity={0.65} />
-
-        {/* Actual solid line */}
         {actualPath && <path d={actualPath} fill="none" stroke="var(--ar-pos)" strokeWidth={2.5} />}
 
-        {/* Clickable projected points */}
         {data.map((d, i) => (
           <g key={i}
             onClick={() => setPopup(popup === i ? null : i)}
@@ -96,17 +89,15 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
           >
             <circle cx={px(i)} cy={py(d.projected)} r={12} fill="transparent" />
             <circle cx={px(i)} cy={py(d.projected)} r={popup === i ? 5 : 3}
-              fill={popup === i ? 'var(--ar-accent)' : 'var(--ar-accent)'}
+              fill="var(--ar-accent)"
               opacity={popup === i ? 1 : 0.35} />
           </g>
         ))}
 
-        {/* Actual dots */}
         {actualPoints.map(pt => (
           <circle key={pt.i} cx={pt.x} cy={pt.y} r={4} fill="var(--ar-pos)" />
         ))}
 
-        {/* Purchase month marker */}
         {buyAtMonth != null && buyAtMonth < data.length && (
           <g>
             <line
@@ -126,7 +117,6 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
           </g>
         )}
 
-        {/* X-axis month labels */}
         {labelIdxs.map(i => (
           <text key={i} x={px(i)} y={height - 4} textAnchor="middle"
             fontSize="9" fill="var(--ar-muted)" style={{ userSelect: 'none' }}>
@@ -134,7 +124,6 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
           </text>
         ))}
 
-        {/* Popup tooltip inside SVG */}
         {popupRow && (
           <g>
             <rect x={tooltipX - 4} y={tooltipY - 2} width={148} height={52}
@@ -170,7 +159,6 @@ export default function TrackProgress() {
   const scenario = scenarios.find(s => s.id === selectedId);
   const s1       = useMemo(() => scenario?.step1 || {}, [scenario]);
 
-  /* Build projection timeline */
   const timeline = useMemo(() => {
     if (!scenario) return [];
     return buildSavingsTimeline(
@@ -184,9 +172,8 @@ export default function TrackProgress() {
 
   const actualByMonth = progress?.[selectedId] || {};
 
-  const [showPast, setShowPast] = useState(false);
-  const [showAllMonths, setShowAllMonths] = useState(false);
-  const currentRowRef = useRef(null);
+  const [showPrior, setShowPrior] = useState(false);
+  const [extraPriorCount, setExtraPriorCount] = useState(0);
 
   const todayStr = (() => {
     const d = new Date();
@@ -195,13 +182,6 @@ export default function TrackProgress() {
   const startMonth = s1.startMonth || todayStr;
   const currentMonthIdx = Math.max(0, Math.min(monthsBetween(startMonth, todayStr), timeline.length - 1));
 
-  function scrollToToday() {
-    setShowAllMonths(true);
-    setTimeout(() => {
-      currentRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 50);
-  }
-
   /* Chart data */
   const chartData = timeline.map(row => ({
     name:      row.label,
@@ -209,13 +189,95 @@ export default function TrackProgress() {
     actual:    actualByMonth[row.month] !== undefined ? actualByMonth[row.month] : null,
   }));
 
-  /* KPI computation — "YTD" = latest month where actual was entered */
-  const enteredMonths = Object.keys(actualByMonth).map(Number).sort((a, b) => a - b);
+  /* KPI — only non-negative month indices */
+  const enteredMonths = Object.keys(actualByMonth).map(Number).filter(n => n >= 0).sort((a, b) => a - b);
   const latestIdx     = enteredMonths.length > 0 ? enteredMonths[enteredMonths.length - 1] : -1;
   const savedYTD      = latestIdx >= 0 ? (actualByMonth[latestIdx] || 0) : 0;
   const targetYTD     = latestIdx >= 0 && timeline[latestIdx] ? timeline[latestIdx].balance : 0;
   const delta         = savedYTD - targetYTD;
   const onTrack       = delta >= 0;
+
+  /* Row data */
+  const mainRows = timeline.slice(currentMonthIdx, currentMonthIdx + 7);
+  const priorTimelineRows = timeline.slice(0, currentMonthIdx);
+  const negativeRows = Array.from({ length: extraPriorCount }, (_, i) => {
+    const monthIdx = -(extraPriorCount - i);
+    return { monthIdx, label: fmtMonthLabel(startMonth, monthIdx), balance: null };
+  });
+  const priorRows = [...negativeRows, ...priorTimelineRows];
+
+  function handleAddPriorMonth() {
+    setExtraPriorCount(c => c + 1);
+    setShowPrior(true);
+  }
+
+  function renderRow(monthIdx, label, projectedBalance, isCurrent) {
+    const projected = projectedBalance != null ? Math.round(projectedBalance) : null;
+    const actual    = actualByMonth[monthIdx];
+    const rowDelta  = actual !== undefined && projected !== null ? actual - projected : null;
+    const hitRate   = actual !== undefined && projected !== null
+      ? Math.min(100, (actual / Math.max(projected, 1)) * 100)
+      : null;
+
+    return (
+      <tr
+        key={monthIdx}
+        className={isCurrent ? 'ar-track-current' : ''}
+        style={isCurrent ? { background: 'var(--ar-accent-soft)' } : {}}
+      >
+        <td style={{ whiteSpace: 'nowrap' }}>{label}</td>
+        <td style={{ textAlign: 'right' }} className="ar-num">
+          {projected !== null ? fmtCurrency(projected) : '—'}
+        </td>
+        <td style={{ textAlign: 'right' }}>
+          <input
+            type="number"
+            placeholder="—"
+            value={actual !== undefined ? actual : ''}
+            onChange={e => {
+              const val = e.target.value;
+              updateProgress && updateProgress(
+                selectedId, monthIdx,
+                val === '' ? 0 : parseFloat(val) || 0
+              );
+            }}
+            className="ar-input ar-num ar-track-input"
+          />
+        </td>
+        <td
+          style={{
+            textAlign: 'right',
+            fontWeight: 500,
+            color: rowDelta == null
+              ? 'var(--ar-muted)'
+              : rowDelta >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)',
+          }}
+          className="ar-num"
+        >
+          {rowDelta != null
+            ? `${rowDelta >= 0 ? '+' : ''}${fmtCurrency(rowDelta)}`
+            : '—'}
+        </td>
+        <td>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {hitRate !== null ? (
+              <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  width: `${hitRate}%`,
+                  background: rowDelta >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)',
+                  borderRadius: 3,
+                  transition: 'width 0.3s',
+                }} />
+              </div>
+            ) : (
+              <div style={{ flex: 1 }} />
+            )}
+          </div>
+        </td>
+      </tr>
+    );
+  }
 
   /* ── Empty state ──────────────────────────────────────────────────────── */
   if (!scenario) {
@@ -283,14 +345,8 @@ export default function TrackProgress() {
 
           {/* 4 KPI summary cards */}
           <div className="ar-grid-4 ar-track-kpi">
-            <KPICard
-              label="Saved YTD"
-              value={fmtCurrency(savedYTD)}
-            />
-            <KPICard
-              label="Target YTD"
-              value={fmtCurrency(targetYTD)}
-            />
+            <KPICard label="Saved YTD" value={fmtCurrency(savedYTD)} />
+            <KPICard label="Target YTD" value={fmtCurrency(targetYTD)} />
             <KPICard
               label="Delta"
               value={(delta >= 0 ? '+' : '') + fmtCurrency(delta)}
@@ -305,27 +361,12 @@ export default function TrackProgress() {
 
           {/* SVG chart card */}
           <div className="ar-card">
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16,
-                flexWrap: 'wrap',
-                gap: 8,
-              }}
-            >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
               <div className="ar-label">Projected vs actual savings</div>
               <div className="ar-track-legend" style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--ar-muted)', flexWrap: 'wrap' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <svg width="20" height="10">
-                    <line
-                      x1="0" y1="5" x2="20" y2="5"
-                      stroke="var(--ar-accent)"
-                      strokeWidth="1.5"
-                      strokeDasharray="5 3"
-                      opacity="0.65"
-                    />
+                    <line x1="0" y1="5" x2="20" y2="5" stroke="var(--ar-accent)" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.65" />
                   </svg>
                   Projected
                 </span>
@@ -352,26 +393,20 @@ export default function TrackProgress() {
 
           {/* Monthly entries table */}
           <div className="ar-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
               <div className="ar-label">Monthly entries</div>
-              <div className="ar-track-actions" style={{ display: 'flex', gap: 8 }}>
-                {currentMonthIdx > 0 && (
-                  <button className="ar-btn ar-btn-ghost ar-btn-sm ar-track-showpast" onClick={() => setShowPast(p => !p)}>
-                    {showPast ? 'Hide past months' : `Show ${currentMonthIdx} past month${currentMonthIdx !== 1 ? 's' : ''}`}
+              <div className="ar-track-actions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {(currentMonthIdx > 0 || extraPriorCount > 0) && (
+                  <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setShowPrior(p => !p)}>
+                    {showPrior ? 'Hide prior months' : 'Show prior months'}
                   </button>
                 )}
-                <button
-                  className={`ar-btn ar-btn-sm ar-track-expand ${showAllMonths ? 'ar-btn-accent' : 'ar-btn-ghost'}`}
-                  onClick={() => setShowAllMonths(v => !v)}
-                >
-                  {showAllMonths ? '↑ Collapse to last 6' : `↓ Expand all ${timeline.length} months`}
-                </button>
-                <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={scrollToToday}>
-                  Jump to today
+                <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={handleAddPriorMonth}>
+                  + Add prior month
                 </button>
               </div>
             </div>
-            <div className={`ar-track-table-wrap ${showAllMonths ? 'show-all' : ''} ${showPast ? 'show-past' : ''}`}>
+            <div className="ar-track-table-wrap">
               <table className="ar-table ar-track-table">
                 <thead>
                   <tr>
@@ -383,105 +418,13 @@ export default function TrackProgress() {
                   </tr>
                 </thead>
                 <tbody>
-                  {timeline.map(row => {
-                    const isPast    = row.month < currentMonthIdx;
-                    const isCurrent = row.month === currentMonthIdx;
-                    const isInMobileWindow = row.month >= Math.max(0, currentMonthIdx - 5) && row.month <= currentMonthIdx;
-
-                    const projected = Math.round(row.balance);
-                    const actual    = actualByMonth[row.month];
-                    const rowDelta  = actual !== undefined ? actual - projected : null;
-                    const hitRate   =
-                      actual !== undefined
-                        ? Math.min(100, (actual / Math.max(projected, 1)) * 100)
-                        : null;
-
-                    return (
-                      <tr
-                        key={row.month}
-                        ref={isCurrent ? currentRowRef : null}
-                        data-is-past={isPast}
-                        data-is-current={isCurrent}
-                        data-in-mobile-window={isInMobileWindow}
-                        className={isCurrent ? 'ar-track-current' : ''}
-                        style={isCurrent ? { background: 'var(--ar-accent-soft)' } : {}}
-                      >
-                        {/* Month */}
-                        <td style={{ whiteSpace: 'nowrap' }}>{row.label}</td>
-
-                        {/* Target (cumulative) */}
-                        <td style={{ textAlign: 'right' }} className="ar-num">
-                          {fmtCurrency(projected)}
-                        </td>
-
-                        {/* Actual input */}
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            type="number"
-                            placeholder="—"
-                            value={actual !== undefined ? actual : ''}
-                            onChange={e => {
-                              const val = e.target.value;
-                              if (val === '') {
-                                updateProgress && updateProgress(selectedId, row.month, 0);
-                              } else {
-                                updateProgress && updateProgress(selectedId, row.month, parseFloat(val) || 0);
-                              }
-                            }}
-                            className="ar-input ar-num ar-track-input"
-                          />
-                        </td>
-
-                        {/* Delta */}
-                        <td
-                          style={{
-                            textAlign: 'right',
-                            fontWeight: 500,
-                            color:
-                              rowDelta == null
-                                ? 'var(--ar-muted)'
-                                : rowDelta >= 0
-                                ? 'var(--ar-pos)'
-                                : 'var(--ar-warn)',
-                          }}
-                          className="ar-num"
-                        >
-                          {rowDelta != null
-                            ? `${rowDelta >= 0 ? '+' : ''}${fmtCurrency(rowDelta)}`
-                            : '—'}
-                        </td>
-
-                        {/* Hit rate bar */}
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {hitRate !== null ? (
-                              <div
-                                style={{
-                                  flex: 1,
-                                  height: 6,
-                                  borderRadius: 3,
-                                  background: 'rgba(0,0,0,0.06)',
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    height: '100%',
-                                    width: `${hitRate}%`,
-                                    background: rowDelta >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)',
-                                    borderRadius: 3,
-                                    transition: 'width 0.3s',
-                                  }}
-                                />
-                              </div>
-                            ) : (
-                              <div style={{ flex: 1 }} />
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
+                  {showPrior && priorRows.map(row => {
+                    const monthIdx = row.monthIdx ?? row.month;
+                    return renderRow(monthIdx, row.label, row.balance, false);
                   })}
+                  {mainRows.map(row =>
+                    renderRow(row.month, row.label, row.balance, row.month === currentMonthIdx)
+                  )}
                 </tbody>
               </table>
             </div>

@@ -3,6 +3,7 @@ import { buildSavingsTimeline, fmtCurrency, fmtMonthLabel, addMonths, CLOSING_PC
 import MonthPicker from '../Common/MonthPicker';
 import SliderRow from '../Common/SliderRow';
 import Stat from '../Common/Stat';
+import { useApp } from '../../contexts/AppContext';
 
 const today = new Date();
 const DEFAULT_START = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -15,7 +16,7 @@ const DEFAULT = {
   downPct: 20,
   heatmapPriceMin: 500000,
   heatmapPriceMax: 850000,
-  heatmapPriceSteps: 6,
+  heatmapPriceIncrement: 25000,
   overrides: {},
 };
 
@@ -238,7 +239,7 @@ function SavingsTable({ data, startMonth, downPct, onOverride }) {
 // ── Affordability heatmap ───────────────────────────────────────────────────
 function Heatmap({
   timeline, startMonth, downPct,
-  heatmapPriceMin, heatmapPriceMax, heatmapPriceSteps,
+  heatmapPriceMin, heatmapPriceMax, heatmapPriceIncrement,
   onPickMonth,
   selectedPurchaseMonth, selectedPrice,
 }) {
@@ -253,12 +254,14 @@ function Heatmap({
   }, [timeline.length]);
 
   const prices = useMemo(() => {
-    const span = heatmapPriceMax - heatmapPriceMin;
-    const pStep = span / Math.max(1, heatmapPriceSteps - 1);
-    return Array.from({ length: heatmapPriceSteps }, (_, i) =>
-      Math.round((heatmapPriceMin + i * pStep) / 1000) * 1000
-    );
-  }, [heatmapPriceMin, heatmapPriceMax, heatmapPriceSteps]);
+    const inc = Math.max(1000, heatmapPriceIncrement);
+    const result = [];
+    for (let p = heatmapPriceMin; p < heatmapPriceMax; p += inc) {
+      result.push(Math.round(p / 1000) * 1000);
+    }
+    result.push(Math.round(heatmapPriceMax / 1000) * 1000);
+    return result;
+  }, [heatmapPriceMin, heatmapPriceMax, heatmapPriceIncrement]);
 
   const balances = useMemo(() => timeline.map(r => r.balance), [timeline]);
 
@@ -382,7 +385,8 @@ function Heatmap({
 }
 
 // ── Main Step1 ──────────────────────────────────────────────────────────────
-export default function Step1({ data, onChange }) {
+export default function Step1({ data, onChange, scenarioId }) {
+  const { progress } = useApp();
   const vals = useMemo(
     () => ({ ...DEFAULT, ...data, overrides: data?.overrides || {} }),
     [data]
@@ -433,13 +437,28 @@ export default function Step1({ data, onChange }) {
             <div className="ar-label">Step 1 of 3 · Savings</div>
             <h2 className="ar-display" style={{ fontSize: 30, margin: '8px 0 0', fontWeight: 400 }}>Project your savings</h2>
           </div>
-          <SliderRow
-            label="Starting balance" value={vals.initialSavings}
-            min={0} max={200000} step={500}
-            onChange={v => set('initialSavings', v)}
-            display={fmtCurrency(vals.initialSavings)}
-            editable
-          />
+          <div>
+            <SliderRow
+              label="Starting balance" value={vals.initialSavings}
+              min={0} max={200000} step={500}
+              onChange={v => set('initialSavings', v)}
+              display={fmtCurrency(vals.initialSavings)}
+              editable
+            />
+            {(() => {
+              const tracked = scenarioId ? (progress?.[scenarioId]?.[0] ?? null) : null;
+              if (tracked == null) return null;
+              return (
+                <button
+                  className="ar-btn ar-btn-ghost ar-btn-sm"
+                  style={{ marginTop: 4, fontSize: 11 }}
+                  onClick={() => set('initialSavings', tracked)}
+                >
+                  Sync from Track · {fmtCurrency(tracked)}
+                </button>
+              );
+            })()}
+          </div>
           <SliderRow
             label="Monthly contribution" value={vals.monthlyContrib}
             min={500} max={10000} step={50}
@@ -528,10 +547,18 @@ export default function Step1({ data, onChange }) {
                 onChange={e => set('heatmapPriceMax', parseInt(e.target.value || 0))} />
             </label>
             <label style={{ fontSize: 12, color: 'var(--ar-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              Steps
-              <input type="number" className="ar-input" style={{ width: 60 }}
-                value={vals.heatmapPriceSteps} min={3} max={10}
-                onChange={e => set('heatmapPriceSteps', parseInt(e.target.value || 3))} />
+              Increment
+              <select
+                className="ar-input"
+                style={{ width: 110 }}
+                value={vals.heatmapPriceIncrement}
+                onChange={e => set('heatmapPriceIncrement', parseInt(e.target.value))}
+              >
+                <option value={10000}>$10k</option>
+                <option value={25000}>$25k</option>
+                <option value={50000}>$50k</option>
+                <option value={100000}>$100k</option>
+              </select>
             </label>
           </div>
         </div>
@@ -541,7 +568,7 @@ export default function Step1({ data, onChange }) {
           downPct={vals.downPct}
           heatmapPriceMin={vals.heatmapPriceMin}
           heatmapPriceMax={vals.heatmapPriceMax}
-          heatmapPriceSteps={vals.heatmapPriceSteps}
+          heatmapPriceIncrement={vals.heatmapPriceIncrement}
           onPickMonth={handlePickMonth}
           selectedPurchaseMonth={vals.selectedPurchaseMonth}
           selectedPrice={vals.selectedPrice}

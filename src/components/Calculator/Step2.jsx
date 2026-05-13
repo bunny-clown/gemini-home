@@ -239,6 +239,7 @@ export default function Step2({ data, onChange, step1 }) {
             min={3} max={10} step={0.05}
             onChange={v => set('mortgageRate', v)}
             display={`${vals.mortgageRate.toFixed(2)}%`}
+            editable
           />
           <SliderRow
             label="Loan term"
@@ -253,6 +254,7 @@ export default function Step2({ data, onChange, step1 }) {
             min={0} max={3} step={0.05}
             onChange={v => set('propertyTaxPct', v)}
             display={`${vals.propertyTaxPct.toFixed(2)}% / yr`}
+            editable
           />
           <SliderRow
             label="Insurance / mo"
@@ -260,6 +262,7 @@ export default function Step2({ data, onChange, step1 }) {
             min={0} max={500} step={5}
             onChange={v => set('insuranceMonthly', v)}
             display={fmtCurrency(vals.insuranceMonthly)}
+            editable
           />
           <SliderRow
             label="HOA / mo"
@@ -267,6 +270,7 @@ export default function Step2({ data, onChange, step1 }) {
             min={0} max={1000} step={10}
             onChange={v => set('hoaMonthly', v)}
             display={fmtCurrency(vals.hoaMonthly)}
+            editable
           />
         </div>
 
@@ -366,6 +370,7 @@ export default function Step2({ data, onChange, step1 }) {
                 min={0} max={20000} step={50}
                 onChange={v => set('otherMonthlyExpenses', v)}
                 display={fmtCurrency(vals.otherMonthlyExpenses)}
+                editable
               />
             )}
 
