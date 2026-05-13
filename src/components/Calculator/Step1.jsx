@@ -437,33 +437,25 @@ export default function Step1({ data, onChange, scenarioId }) {
             <div className="ar-label">Step 1 of 3 · Savings</div>
             <h2 className="ar-display" style={{ fontSize: 30, margin: '8px 0 0', fontWeight: 400 }}>Project your savings</h2>
           </div>
-          <div>
-            <SliderRow
-              label="Starting balance" value={vals.initialSavings}
-              min={0} max={200000} step={500}
-              onChange={v => set('initialSavings', v)}
-              display={fmtCurrency(vals.initialSavings)}
-              editable
-            />
-            {(() => {
-              const byMonth = scenarioId ? (progress?.[scenarioId] || {}) : {};
-              const latest = Object.keys(byMonth)
-                .map(Number)
-                .filter(n => n >= 0)
-                .sort((a, b) => b - a)[0];
-              const tracked = latest !== undefined ? byMonth[latest] : null;
-              return (
-                <button
-                  className="ar-btn ar-btn-ghost ar-btn-sm"
-                  style={{ marginTop: 4, fontSize: 11 }}
-                  disabled={tracked == null}
-                  onClick={() => tracked != null && set('initialSavings', tracked)}
-                >
-                  {tracked != null ? `Sync from Track · ${fmtCurrency(tracked)}` : 'Sync from Track'}
-                </button>
-              );
-            })()}
-          </div>
+          {(() => {
+            const byMonth = scenarioId ? (progress?.[scenarioId] || {}) : {};
+            const latest = Object.keys(byMonth)
+              .map(Number)
+              .filter(n => n >= 0)
+              .sort((a, b) => b - a)[0];
+            const trackedBalance = latest !== undefined ? byMonth[latest] : null;
+            return (
+              <SliderRow
+                label="Starting balance" value={vals.initialSavings}
+                min={0} max={200000} step={500}
+                onChange={v => set('initialSavings', v)}
+                display={fmtCurrency(vals.initialSavings)}
+                editable
+                syncValue={trackedBalance}
+                syncLabel={trackedBalance != null ? `Use tracked: ${fmtCurrency(trackedBalance)}` : undefined}
+              />
+            );
+          })()}
           <SliderRow
             label="Monthly contribution" value={vals.monthlyContrib}
             min={500} max={10000} step={50}
