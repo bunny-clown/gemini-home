@@ -43,10 +43,12 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
     if (!s1.startMonth) return [];
     return buildSavingsTimeline(s1.initialSavings || 0, s1.startMonth, s1.monthlyContrib || 0, s1.projectionMonths || 36, s1.overrides || {});
   }, [s1]);
-  const currentMonthIdx = Math.max(0, Math.min(monthsBetween(s1.startMonth || todayYM, todayYM), timeline.length - 1));
-  const projectedBalance = timeline[currentMonthIdx]?.balance ?? 0;
+  const purchaseMonthIdx = s1.selectedPurchaseMonth
+    ? Math.max(0, Math.min(monthsBetween(s1.startMonth || todayYM, s1.selectedPurchaseMonth), timeline.length - 1))
+    : timeline.length - 1;
+  const projectedAtPurchase = timeline[purchaseMonthIdx]?.balance ?? 0;
   const stillNeeded = Math.max(0, purchaseTarget - trackedBalance);
-  const vsProjected = trackedBalance - projectedBalance;
+  const purchaseGap = projectedAtPurchase - purchaseTarget;
 
   return (
     <div
@@ -123,7 +125,8 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
                   ['Closing costs (est.)', fmtCurrency(closingCosts), null],
                   ['Total needed', fmtCurrency(purchaseTarget), null],
                   ['Still needed', stillNeeded > 0 ? fmtCurrency(stillNeeded) : '✓ Ready to buy', stillNeeded === 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
-                  ['vs. projection', (vsProjected >= 0 ? '+' : '') + fmtCurrency(vsProjected), vsProjected >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                  ['Projected at purchase', fmtCurrency(projectedAtPurchase), projectedAtPurchase >= purchaseTarget ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                  ['Surplus / shortfall', (purchaseGap >= 0 ? '+' : '') + fmtCurrency(purchaseGap), purchaseGap >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
                 ].map(([label, value, color]) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '3px 0', fontSize: 12 }}>
                     <span style={{ color: 'var(--ar-muted)' }}>{label}</span>
