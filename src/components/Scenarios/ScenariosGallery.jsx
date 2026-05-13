@@ -14,7 +14,7 @@ function Row({ label, value, valueStyle }) {
 }
 
 // ── Scenario card ───────────────────────────────────────────────────────────
-function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, onEdit, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
+function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, onEdit, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, progress }) {
   const s1 = scenario.step1 || {};
   const s2 = scenario.step2 || {};
   const homePrice = s1.selectedPrice || 0;
@@ -26,6 +26,14 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
   const purchaseDate = s1.selectedPurchaseMonth || '—';
 
   const leftoverColor = leftover >= 0 ? 'var(--ar-green, #22c55e)' : 'var(--ar-red, #ef4444)';
+
+  const now = new Date();
+  const todayYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const scenarioProgress = progress?.[scenario.id] || {};
+  const currentMonthIdx = s1.startMonth ? monthsBetween(s1.startMonth, todayYM) : -1;
+  const trackedBalance = currentMonthIdx >= 0 ? (scenarioProgress[currentMonthIdx] ?? null) : null;
+  const dpPct = dp > 0 && trackedBalance != null ? Math.min(100, Math.round((trackedBalance / dp) * 100)) : null;
+  const barColor = dpPct != null && dpPct >= 100 ? 'var(--ar-pos)' : 'var(--ar-warn)';
 
   return (
     <div
@@ -72,6 +80,17 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
           value={fmtCurrency(leftover)}
           valueStyle={{ color: leftoverColor, fontWeight: 600 }}
         />
+        {dpPct != null && (
+          <div style={{ padding: '6px 0 2px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+              <span className="ar-label" style={{ color: 'var(--ar-muted, #888)' }}>Down payment saved</span>
+              <span className="ar-num" style={{ fontSize: 12, fontWeight: 600, color: barColor }}>{dpPct}%</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: 'var(--ar-border)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${dpPct}%`, borderRadius: 3, background: barColor, transition: 'width 0.3s' }} />
+            </div>
+          </div>
+        )}
       </div>
 
       <div
@@ -338,7 +357,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
 export default function ScenariosGallery() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { scenarios, deleteScenario, starScenario, targetId, updateNote, reorderScenarios } = useApp();
+  const { scenarios, deleteScenario, starScenario, targetId, updateNote, reorderScenarios, progress } = useApp();
   const [openId, setOpenId] = useState(() => {
     const params = new URLSearchParams(location.search);
     const openParam = params.get('open');
@@ -449,6 +468,7 @@ export default function ScenariosGallery() {
                   onDragOver={e => handleDragOver(e, scenario.id)}
                   onDrop={e => handleDrop(e, scenario.id)}
                   onDragEnd={handleDragEnd}
+                  progress={progress}
                 />
               ))}
             </div>
