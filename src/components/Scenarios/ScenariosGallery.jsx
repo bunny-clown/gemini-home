@@ -30,9 +30,10 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
   const now = new Date();
   const todayYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const scenarioProgress = progress?.[scenario.id] || {};
-  const currentMonthIdx = s1.startMonth ? monthsBetween(s1.startMonth, todayYM) : -1;
-  const trackedBalance = currentMonthIdx >= 0 ? (scenarioProgress[currentMonthIdx] ?? null) : null;
-  const dpPct = dp > 0 && trackedBalance != null ? Math.min(100, Math.round((trackedBalance / dp) * 100)) : null;
+  const startMonth = s1.startMonth || todayYM;
+  const currentMonthIdx = Math.max(0, monthsBetween(startMonth, todayYM));
+  const trackedBalance = scenarioProgress[currentMonthIdx] ?? 0;
+  const dpPct = dp > 0 ? Math.min(100, Math.round((trackedBalance / dp) * 100)) : null;
   const barColor = dpPct != null && dpPct >= 100 ? 'var(--ar-pos)' : 'var(--ar-warn)';
 
   return (
