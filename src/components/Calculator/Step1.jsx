@@ -433,7 +433,7 @@ export default function Step1({ data, onChange }) {
               if (!startMonth) continue;
               for (const [idxStr, balance] of Object.entries(monthData || {})) {
                 const idx = parseInt(idxStr);
-                if (idx < 0) continue;
+                if (idx < 0 || !balance) continue;
                 const calMonth = addMonths(startMonth, idx);
                 if (!latestCalMonth || calMonth > latestCalMonth) {
                   latestCalMonth = calMonth;

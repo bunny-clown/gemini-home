@@ -24,7 +24,7 @@ export default function CurrencyInput({ value, onChange, className, style, place
       onBlur={() => {
         setFocused(false);
         const v = parseFloat(raw.replace(/[^0-9.]/g, ''));
-        onChange(isNaN(v) ? 0 : v);
+        if (!isNaN(v)) onChange(v);
       }}
       onChange={e => setRaw(e.target.value.replace(/[^0-9.]/g, ''))}
     />
