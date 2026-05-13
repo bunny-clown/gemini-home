@@ -32,7 +32,8 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
     Object.entries(byMonth || {}).map(([k, v]) => ({ idx: Number(k), val: v }))
   ).filter(e => e.idx >= 0 && e.val > 0).sort((a, b) => b.idx - a.idx);
   const trackedBalance = allEntries.length > 0 ? allEntries[0].val : 0;
-  const dpPct = dp > 0 ? Math.min(100, Math.round((trackedBalance / dp) * 100)) : null;
+  const purchaseTarget = dp + closingCosts;
+  const dpPct = purchaseTarget > 0 ? Math.min(100, Math.round((trackedBalance / purchaseTarget) * 100)) : null;
   const barColor = dpPct != null && dpPct >= 100 ? 'var(--ar-pos)' : 'var(--ar-warn)';
 
   return (
@@ -83,7 +84,7 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
         {dpPct != null && (
           <div style={{ padding: '6px 0 2px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-              <span className="ar-label" style={{ color: 'var(--ar-muted, #888)' }}>Down payment saved</span>
+              <span className="ar-label" style={{ color: 'var(--ar-muted, #888)' }}>Purchase ready</span>
               <span className="ar-num" style={{ fontSize: 12, fontWeight: 600, color: barColor }}>{dpPct}%</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: 'var(--ar-border)', overflow: 'hidden' }}>
