@@ -549,9 +549,11 @@ html, body, #root { background: #f4f2ee !important; }
   /* Heatmap: let card's natural padding create spacing; no full-bleed */
   .ar-heatmap-scroll { margin: 0; padding: 0; width: 100%; }
 
-  /* Heatmap controls: Min/Max on row 1, Increment forced under Max */
-  .ar-heatmap-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
+  /* Heatmap controls: Min/Max on row 1, Increment directly under Max input */
+  .ar-heatmap-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+  .ar-heatmap-controls label { flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; }
   .ar-heatmap-controls label:last-child { grid-column: 2; }
+  .ar-heatmap-controls .ar-input { width: 100% !important; box-sizing: border-box; }
 
   /* Savings chart: natural aspect ratio instead of absolute-fill */
   .ar-savings-chart { height: auto !important; min-height: 0 !important; }
@@ -583,14 +585,14 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-track-kpi .ar-display { font-size: 20px !important; }
 
   /* Track table: fits screen + collapsible */
-  .ar-track-table-wrap { overflow-x: visible; width: 100%; }
+  .ar-track-table-wrap { overflow-x: hidden; width: 100%; }
   .ar-track-table { font-size: 13px; width: 100%; table-layout: fixed; }
   .ar-track-table th { font-size: 10px; padding: 6px 4px; text-align: right; }
-  .ar-track-table th:first-child { text-align: left; width: 60px; }
-  .ar-track-table th:nth-child(2) { width: 70px; }
-  .ar-track-table th:nth-child(3) { width: 100px; }
-  .ar-track-table th:nth-child(4) { width: 65px; }
-  .ar-track-table th:nth-child(5) { width: 60px; }
+  .ar-track-table th:first-child { text-align: left; width: 55px; }
+  .ar-track-table th:nth-child(2) { width: 65px; }
+  .ar-track-table th:nth-child(3) { width: 90px; }
+  .ar-track-table th:nth-child(4) { width: 55px; }
+  .ar-track-table th:nth-child(5) { width: 50px; }
   .ar-track-table td { padding: 6px 4px; font-size: 13px; }
   .ar-track-table td:first-child { text-align: left; }
   .ar-track-table td:not(:first-child) { text-align: right; }
