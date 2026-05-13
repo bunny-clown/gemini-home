@@ -28,10 +28,10 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
 
   const leftoverColor = leftover >= 0 ? 'var(--ar-green, #22c55e)' : 'var(--ar-red, #ef4444)';
 
-  const scenarioProgress = progress?.[scenario.id] || {};
-  const enteredMonths = Object.keys(scenarioProgress).map(Number).filter(n => n >= 0).sort((a, b) => a - b);
-  const latestIdx = enteredMonths.length > 0 ? enteredMonths[enteredMonths.length - 1] : -1;
-  const trackedBalance = latestIdx >= 0 ? (scenarioProgress[latestIdx] || 0) : 0;
+  const allEntries = Object.values(progress || {}).flatMap(byMonth =>
+    Object.entries(byMonth || {}).map(([k, v]) => ({ idx: Number(k), val: v }))
+  ).filter(e => e.idx >= 0 && e.val > 0).sort((a, b) => b.idx - a.idx);
+  const trackedBalance = allEntries.length > 0 ? allEntries[0].val : 0;
   const dpPct = dp > 0 ? Math.min(100, Math.round((trackedBalance / dp) * 100)) : null;
   const barColor = dpPct != null && dpPct >= 100 ? 'var(--ar-pos)' : 'var(--ar-warn)';
 
@@ -88,9 +88,6 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
             </div>
             <div style={{ height: 6, borderRadius: 3, background: 'var(--ar-border)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${dpPct}%`, borderRadius: 3, background: barColor, transition: 'width 0.3s' }} />
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--ar-muted)', marginTop: 2 }}>
-              dbg: id={scenario.id} progressKeys={Object.keys(progress||{}).join('|')}
             </div>
           </div>
         )}
