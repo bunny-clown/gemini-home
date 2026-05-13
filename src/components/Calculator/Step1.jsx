@@ -498,6 +498,7 @@ export default function Step1({ data, onChange }) {
             {view === 'graph'
               ? (
                 <SavingsCurve
+                  key={vals.startMonth}
                   data={timeline}
                   startMonth={vals.startMonth}
                   downPct={vals.downPct}
@@ -557,6 +558,7 @@ export default function Step1({ data, onChange }) {
           </div>
         </div>
         <Heatmap
+          key={vals.startMonth}
           timeline={timeline}
           startMonth={vals.startMonth}
           downPct={vals.downPct}
