@@ -48,7 +48,7 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
     : timeline.length - 1;
   const projectedAtPurchase = timeline[purchaseMonthIdx]?.balance ?? 0;
   const stillNeeded = Math.max(0, purchaseTarget - trackedBalance);
-  const purchaseGap = projectedAtPurchase - purchaseTarget;
+  const purchaseGap = projectedAtPurchase - purchaseTarget - Math.max(0, leftover);
 
   return (
     <div
