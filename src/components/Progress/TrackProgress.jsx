@@ -241,6 +241,7 @@ export default function TrackProgress() {
           <CurrencyInput
             value={actual}
             onChange={v => updateProgress && updateProgress(selectedId, monthIdx, v)}
+            onClear={() => updateProgress && updateProgress(selectedId, monthIdx, null)}
             className="ar-input ar-num ar-track-input"
           />
         </td>

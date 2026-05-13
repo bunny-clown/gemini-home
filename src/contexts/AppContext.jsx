@@ -124,9 +124,12 @@ export function AppProvider({ children }) {
 
   const updateProgress = useCallback((scenarioId, monthIdx, amount) => {
     setProgress(prev => {
-      const next = { ...prev };
-      if (!next[scenarioId]) next[scenarioId] = {};
-      next[scenarioId][monthIdx] = amount;
+      const next = { ...prev, [scenarioId]: { ...(prev[scenarioId] || {}) } };
+      if (amount == null) {
+        delete next[scenarioId][monthIdx];
+      } else {
+        next[scenarioId][monthIdx] = amount;
+      }
       return next;
     });
   }, []);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function CurrencyInput({ value, onChange, className, style, placeholder = '—' }) {
+export default function CurrencyInput({ value, onChange, onClear, className, style, placeholder = '—' }) {
   const [focused, setFocused] = useState(false);
   const [raw, setRaw] = useState('');
 
@@ -25,6 +25,7 @@ export default function CurrencyInput({ value, onChange, className, style, place
         setFocused(false);
         const v = parseFloat(raw.replace(/[^0-9.]/g, ''));
         if (!isNaN(v)) onChange(v);
+        else if (raw === '' && onClear) onClear();
       }}
       onChange={e => setRaw(e.target.value.replace(/[^0-9.]/g, ''))}
     />
