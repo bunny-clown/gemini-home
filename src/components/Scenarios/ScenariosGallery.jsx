@@ -109,31 +109,32 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
               <div style={{ height: '100%', width: `${dpPct}%`, borderRadius: 3, background: barColor, transition: 'width 0.3s' }} />
             </div>
             {showBarPopup && (
-              <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                  position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0,
-                  background: 'var(--ar-bg)', border: '1px solid var(--ar-border)',
-                  borderRadius: 10, padding: '10px 14px',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 20,
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Savings snapshot</div>
-                {[
-                  ['Saved', fmtCurrency(trackedBalance), null],
-                  ['Down payment', fmtCurrency(dp), null],
-                  ['Closing costs (est.)', fmtCurrency(closingCosts), null],
-                  ['Total needed', fmtCurrency(purchaseTarget), null],
-                  ['Still needed', stillNeeded > 0 ? fmtCurrency(stillNeeded) : '✓ Ready to buy', stillNeeded === 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
-                  ['Projected at purchase', fmtCurrency(projectedAtPurchase), projectedAtPurchase >= purchaseTarget ? 'var(--ar-pos)' : 'var(--ar-warn)'],
-                  ['Surplus / shortfall', (purchaseGap >= 0 ? '+' : '') + fmtCurrency(purchaseGap), purchaseGap >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
-                ].map(([label, value, color]) => (
-                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '3px 0', fontSize: 12 }}>
-                    <span style={{ color: 'var(--ar-muted)' }}>{label}</span>
-                    <span className="ar-num" style={{ color: color || 'var(--ar-fg)', fontWeight: 500 }}>{value}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 19 }} onClick={e => { e.stopPropagation(); setShowBarPopup(false); }} />
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{
+                    position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0,
+                    background: 'var(--ar-bg)', border: '1px solid var(--ar-border)',
+                    borderRadius: 10, padding: '10px 14px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 20,
+                  }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Savings snapshot</div>
+                  {[
+                    ['Saved', fmtCurrency(trackedBalance), null],
+                    ['Total needed', fmtCurrency(purchaseTarget), null],
+                    ['Still needed', stillNeeded > 0 ? fmtCurrency(stillNeeded) : '✓ Ready to buy', stillNeeded === 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                    ['Projected at purchase', fmtCurrency(projectedAtPurchase), projectedAtPurchase >= purchaseTarget ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                    ['Surplus / shortfall', (purchaseGap >= 0 ? '+' : '') + fmtCurrency(purchaseGap), purchaseGap >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                  ].map(([label, value, color]) => (
+                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '3px 0', fontSize: 12 }}>
+                      <span style={{ color: 'var(--ar-muted)' }}>{label}</span>
+                      <span className="ar-num" style={{ color: color || 'var(--ar-fg)', fontWeight: 500 }}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}
@@ -243,6 +244,12 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
   const paymentAtExistingRate = rate && newLoanBal ? calcPI(newLoanBal, rate, term) : 0;
   const fundFillMonths = sim?.fundFillMonths || {};
 
+  const savingsTimeline = buildSavingsTimeline(s1.initialSavings || 0, s1.startMonth || '', s1.monthlyContrib || 0, s1.projectionMonths || 36, s1.overrides || {});
+  const purchaseMonthIdx = s1.startMonth && purchaseMonth
+    ? Math.max(0, Math.min(monthsBetween(s1.startMonth, purchaseMonth), savingsTimeline.length - 1))
+    : 0;
+  const projectedSavingsAtPurchase = savingsTimeline[purchaseMonthIdx]?.balance ?? 0;
+
   const handleNoteBlur = () => updateNote && updateNote(scenario.id, note);
 
   return (
@@ -277,11 +284,13 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
         <div className="ar-modal-desktop" style={{ gridTemplateColumns: '1fr 1fr', gap: '0 32px' }}>
           <div>
             <ModalSection title="SAVINGS PLAN">
+              <MR label="Starting month" value={s1.startMonth ? fmtMonthLabel(s1.startMonth, 0) : '—'} />
               <MR label="Monthly saving" value={monthlyContrib ? fmtCurrency(monthlyContrib) : '—'} />
               <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
             </ModalSection>
             <ModalSection title="PURCHASE">
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
+              <MR label="Total saved" value={projectedSavingsAtPurchase ? fmtCurrency(projectedSavingsAtPurchase) : '—'} />
               <MR label="Loan amount" value={loanAmount ? fmtCurrency(loanAmount) : '—'} />
               <MR label="Leftover cash" value={fmtCurrency(leftover)} color={leftover >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'} />
             </ModalSection>
@@ -333,11 +342,13 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
         <div className="ar-modal-mobile-content">
           {tab === 'overview' && <>
             <ModalSection title="SAVINGS PLAN">
+              <MR label="Starting month" value={s1.startMonth ? fmtMonthLabel(s1.startMonth, 0) : '—'} />
               <MR label="Monthly saving" value={monthlyContrib ? fmtCurrency(monthlyContrib) : '—'} />
               <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
             </ModalSection>
             <ModalSection title="PURCHASE">
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
+              <MR label="Total saved" value={projectedSavingsAtPurchase ? fmtCurrency(projectedSavingsAtPurchase) : '—'} />
               <MR label="Loan amount" value={loanAmount ? fmtCurrency(loanAmount) : '—'} />
               <MR label="Leftover cash" value={fmtCurrency(leftover)} color={leftover >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'} />
             </ModalSection>
