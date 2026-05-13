@@ -104,11 +104,11 @@ export default function Step2({ data, onChange, step1 }) {
   }, [piti.total, monthlyReserves, expenseItemsTotal]);
 
   const pitiSegs = [
-    { label: 'Principal & interest', value: piti.pi, color: 'var(--ar-accent)' },
-    { label: 'Property tax', value: piti.taxes, color: '#c97b5a' },
-    { label: 'Insurance', value: piti.insurance, color: '#5a9eb5' },
+    { label: 'P&I', value: piti.pi, color: 'var(--ar-accent)' },
+    { label: 'Taxes', value: piti.taxes, color: '#1fa97a' },
+    { label: 'Insurance', value: piti.insurance, color: '#f5b53b' },
     { label: 'PMI', value: piti.pmi, color: 'var(--ar-warn)' },
-    { label: 'HOA', value: piti.hoa, color: '#a3a3a3' },
+    { label: 'HOA', value: piti.hoa, color: '#a855f7' },
   ];
 
   // Expense item handlers
@@ -229,6 +229,10 @@ export default function Step2({ data, onChange, step1 }) {
       {/* PITI inputs + breakdown */}
       <div className="ar-grid-2">
         <div className="ar-card" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <div>
+            <div className="ar-label">Step 2 of 3 · Payment & Reserves</div>
+            <h2 className="ar-display" style={{ fontSize: 30, margin: '8px 0 0', fontWeight: 400 }}>Monthly payment</h2>
+          </div>
           <SliderRow
             label="Interest rate"
             value={vals.mortgageRate}
@@ -272,25 +276,57 @@ export default function Step2({ data, onChange, step1 }) {
 
         <div className="ar-card" style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <div>
-            <div className="ar-label">— Monthly PITI breakdown</div>
-            <div className="ar-display ar-num" style={{ fontSize: 56, lineHeight: 1, marginTop: 6 }}>
+            <div className="ar-label">Total PITI</div>
+            <div className="ar-display ar-num" style={{ fontSize: 56, lineHeight: 1 }}>
               {fmtCurrency(piti.total)}
             </div>
-            <div style={{ color: 'var(--ar-muted)', fontSize: 12, letterSpacing: '0.04em', marginTop: 4 }}>
-              PER MONTH · ALL-IN
-            </div>
+            <div style={{ color: 'var(--ar-muted)', fontSize: 13 }}>per month</div>
           </div>
 
           <StackedBar segments={pitiSegs} height={28} radius={8} />
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {pitiSegs.filter(s => s.value > 0).map(s => (
               <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: s.color, flexShrink: 0 }} />
                 <span style={{ flex: 1, color: 'var(--ar-muted)' }}>{s.label}</span>
                 <span className="ar-num" style={{ fontWeight: 500 }}>{fmtCurrency(s.value)}</span>
               </div>
             ))}
+          </div>
+
+          <hr className="ar-divider" />
+
+          <div>
+            <div className="ar-label" style={{ marginBottom: 6 }}>Housing share of gross income</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: 'var(--ar-muted)' }}>
+                {fmtCurrency(piti.total)} / {fmtCurrency(vals.grossMonthlyIncome)}
+              </span>
+              <span
+                className="ar-num"
+                style={{
+                  fontWeight: 700,
+                  fontSize: 18,
+                  color: incomePct > 33 ? 'var(--ar-warn)' : 'var(--ar-pos)',
+                }}
+              >
+                {incomePct.toFixed(1)}%
+              </span>
+            </div>
+            <StackedBar
+              segments={[
+                { label: 'Housing', value: piti.total, color: 'var(--ar-accent)' },
+                { label: 'Other', value: vals.grossMonthlyIncome - piti.total, color: 'rgba(0,0,0,0.06)' },
+              ]}
+              height={8}
+              radius={4}
+            />
+            {incomePct > 33 && (
+              <div style={{ fontSize: 12, color: 'var(--ar-warn)', marginTop: 6 }}>
+                ↑ Above 33% — consider a lower price point or higher income.
+              </div>
+            )}
           </div>
         </div>
       </div>
