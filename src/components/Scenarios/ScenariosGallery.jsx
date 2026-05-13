@@ -14,7 +14,8 @@ function Row({ label, value, valueStyle }) {
 }
 
 // ── Scenario card ───────────────────────────────────────────────────────────
-function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, onEdit, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd, progress }) {
+function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, onEdit, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
+  const { progress } = useApp();
   const s1 = scenario.step1 || {};
   const s2 = scenario.step2 || {};
   const homePrice = s1.selectedPrice || 0;
@@ -356,7 +357,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
 export default function ScenariosGallery() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { scenarios, deleteScenario, starScenario, targetId, updateNote, reorderScenarios, progress } = useApp();
+  const { scenarios, deleteScenario, starScenario, targetId, updateNote, reorderScenarios } = useApp();
   const [openId, setOpenId] = useState(() => {
     const params = new URLSearchParams(location.search);
     const openParam = params.get('open');
@@ -467,7 +468,6 @@ export default function ScenariosGallery() {
                   onDragOver={e => handleDragOver(e, scenario.id)}
                   onDrop={e => handleDrop(e, scenario.id)}
                   onDragEnd={handleDragEnd}
-                  progress={progress}
                 />
               ))}
             </div>
