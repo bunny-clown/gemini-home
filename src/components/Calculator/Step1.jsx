@@ -446,7 +446,12 @@ export default function Step1({ data, onChange, scenarioId }) {
               editable
             />
             {(() => {
-              const tracked = scenarioId ? (progress?.[scenarioId]?.[0] ?? null) : null;
+              const byMonth = scenarioId ? (progress?.[scenarioId] || {}) : {};
+              const latest = Object.keys(byMonth)
+                .map(Number)
+                .filter(n => n >= 0)
+                .sort((a, b) => b - a)[0];
+              const tracked = latest !== undefined ? byMonth[latest] : null;
               if (tracked == null) return null;
               return (
                 <button
