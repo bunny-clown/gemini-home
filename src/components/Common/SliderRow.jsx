@@ -45,6 +45,7 @@ export default function SliderRow({ label, value, min, max, step, onChange, disp
                 className="ar-btn ar-btn-ghost ar-btn-sm"
                 style={{ fontSize: 11, padding: '2px 8px' }}
                 onMouseDown={e => { e.preventDefault(); applySync(); }}
+                onTouchStart={e => { e.preventDefault(); applySync(); }}
               >
                 {syncLabel || `Use tracked: ${syncValue}`}
               </button>
