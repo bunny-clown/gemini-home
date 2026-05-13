@@ -452,14 +452,14 @@ export default function Step1({ data, onChange, scenarioId }) {
                 .filter(n => n >= 0)
                 .sort((a, b) => b - a)[0];
               const tracked = latest !== undefined ? byMonth[latest] : null;
-              if (tracked == null) return null;
               return (
                 <button
                   className="ar-btn ar-btn-ghost ar-btn-sm"
                   style={{ marginTop: 4, fontSize: 11 }}
-                  onClick={() => set('initialSavings', tracked)}
+                  disabled={tracked == null}
+                  onClick={() => tracked != null && set('initialSavings', tracked)}
                 >
-                  Sync from Track · {fmtCurrency(tracked)}
+                  {tracked != null ? `Sync from Track · ${fmtCurrency(tracked)}` : 'Sync from Track'}
                 </button>
               );
             })()}
