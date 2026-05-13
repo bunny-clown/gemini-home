@@ -79,15 +79,12 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
         </span>
       )}
 
-      <div className="ar-label" style={{ color: 'var(--ar-muted, #888)', marginBottom: 4, paddingLeft: 22 }}>
-        {homePrice ? fmtCurrency(homePrice) : '—'}
-      </div>
-
       <div className="ar-display" style={{ marginBottom: 16, fontSize: 22, paddingLeft: 22 }}>
         {scenario.name || 'Untitled scenario'}
       </div>
 
       <div style={{ marginBottom: 16 }}>
+        <Row label="Purchase price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
         <Row label="Purchase date" value={purchaseDate} />
         <Row label="PITI" value={fmtCurrency(piti)} />
         <Row
