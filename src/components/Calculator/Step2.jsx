@@ -375,7 +375,7 @@ export default function Step2({ data, onChange, step1 }) {
             )}
 
             {/* Expand/collapse toggle */}
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 16 }}>
               <button
                 className="ar-btn ar-btn-ghost ar-btn-sm"
                 onClick={() => setExpensesOpen(o => !o)}

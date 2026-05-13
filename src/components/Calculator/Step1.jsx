@@ -538,7 +538,7 @@ export default function Step1({ data, onChange }) {
               Click a feasible cell (✓) to set your purchase plan. Months match your projection window.
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="ar-heatmap-controls" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <label style={{ fontSize: 12, color: 'var(--ar-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
               Min
               <CurrencyInput className="ar-input" style={{ width: 110 }}
