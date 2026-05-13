@@ -111,7 +111,7 @@ function FundChart({ rows, funds, refiMonth, fundFillMonths, monthlyReserves }) 
                 <>
                   <line x1={x} x2={x} y1={0} y2={h}
                     stroke="var(--ar-fg)" strokeWidth="1.5" strokeDasharray="3,3" />
-                  <text x={x + 3} y={14} fontSize="9" fill="var(--ar-fg)" fontWeight="600">refi</text>
+                  <text x={x + 3} y={18} fontSize="18" fill="var(--ar-fg)" fontWeight="600">refi</text>
                 </>
               )}
               {/* Invisible hover/touch rect */}
