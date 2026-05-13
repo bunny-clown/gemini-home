@@ -4,6 +4,7 @@ import MonthPicker from '../Common/MonthPicker';
 import SliderRow from '../Common/SliderRow';
 import Stat from '../Common/Stat';
 import { useApp } from '../../contexts/AppContext';
+import CurrencyInput from '../Common/CurrencyInput';
 
 const today = new Date();
 const DEFAULT_START = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -544,15 +545,15 @@ export default function Step1({ data, onChange }) {
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <label style={{ fontSize: 12, color: 'var(--ar-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
               Min
-              <input type="number" className="ar-input" style={{ width: 110 }}
-                value={vals.heatmapPriceMin} step={25000}
-                onChange={e => set('heatmapPriceMin', parseInt(e.target.value || 0))} />
+              <CurrencyInput className="ar-input" style={{ width: 110 }}
+                value={vals.heatmapPriceMin}
+                onChange={v => set('heatmapPriceMin', Math.round(v))} />
             </label>
             <label style={{ fontSize: 12, color: 'var(--ar-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
               Max
-              <input type="number" className="ar-input" style={{ width: 110 }}
-                value={vals.heatmapPriceMax} step={25000}
-                onChange={e => set('heatmapPriceMax', parseInt(e.target.value || 0))} />
+              <CurrencyInput className="ar-input" style={{ width: 110 }}
+                value={vals.heatmapPriceMax}
+                onChange={v => set('heatmapPriceMax', Math.round(v))} />
             </label>
             <label style={{ fontSize: 12, color: 'var(--ar-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
               Increment

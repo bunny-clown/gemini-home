@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import GlobalHeader from '../Common/GlobalHeader';
 import { useApp } from '../../contexts/AppContext';
 import { buildSavingsTimeline, fmtCurrency, fmtMonthLabel, monthsBetween } from '../../utils/calculations';
+import CurrencyInput from '../Common/CurrencyInput';
 
 
 /* ─── KPI card ─────────────────────────────────────────────────────────── */
@@ -230,17 +231,9 @@ export default function TrackProgress() {
           {projected !== null ? fmtCurrency(projected) : '—'}
         </td>
         <td style={{ textAlign: 'right' }}>
-          <input
-            type="number"
-            placeholder="—"
-            value={actual !== undefined ? actual : ''}
-            onChange={e => {
-              const val = e.target.value;
-              updateProgress && updateProgress(
-                selectedId, monthIdx,
-                val === '' ? 0 : parseFloat(val) || 0
-              );
-            }}
+          <CurrencyInput
+            value={actual}
+            onChange={v => updateProgress && updateProgress(selectedId, monthIdx, v)}
             className="ar-input ar-num ar-track-input"
           />
         </td>
