@@ -246,13 +246,9 @@ function Heatmap({
 }) {
   const [sel, setSel] = useState(null);
 
-  const months = useMemo(() => {
-    const step = Math.max(1, Math.floor(timeline.length / 8));
-    const out = [];
-    for (let m = step - 1; m < timeline.length; m += step) out.push(m);
-    if (out.length && out[out.length - 1] !== timeline.length - 1) out.push(timeline.length - 1);
-    return out;
-  }, [timeline.length]);
+  const months = useMemo(() =>
+    Array.from({ length: timeline.length }, (_, i) => i),
+  [timeline.length]);
 
   const prices = useMemo(() => {
     const inc = Math.max(1000, heatmapPriceIncrement);
