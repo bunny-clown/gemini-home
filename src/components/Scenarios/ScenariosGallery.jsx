@@ -290,7 +290,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
             </ModalSection>
             <ModalSection title="PURCHASE">
               <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
-              <MR label="Purchase date" value={s1.selectedPurchaseMonth || '—'} />
+              <MR label="Purchase date" value={s1.selectedPurchaseMonth ? fmtMonthLabel(s1.selectedPurchaseMonth, 0) : '—'} />
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
               <MR label="Loan amount" value={loanAmount ? fmtCurrency(loanAmount) : '—'} />
               <MR label="Leftover cash" value={fmtCurrency(leftover)} color={leftover >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'} />
@@ -349,7 +349,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
             </ModalSection>
             <ModalSection title="PURCHASE">
               <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
-              <MR label="Purchase date" value={s1.selectedPurchaseMonth || '—'} />
+              <MR label="Purchase date" value={s1.selectedPurchaseMonth ? fmtMonthLabel(s1.selectedPurchaseMonth, 0) : '—'} />
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
               <MR label="Loan amount" value={loanAmount ? fmtCurrency(loanAmount) : '—'} />
               <MR label="Leftover cash" value={fmtCurrency(leftover)} color={leftover >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'} />
