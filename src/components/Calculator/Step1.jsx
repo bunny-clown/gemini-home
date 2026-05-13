@@ -298,7 +298,7 @@ function Heatmap({
       <div className="ar-heatmap-scroll">
         <div className="ar-heatmap-inner">
           {/* Column headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: `110px repeat(${cols}, 1fr)`, gap: 6, marginBottom: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `110px repeat(${cols}, 44px)`, gap: 6, marginBottom: 8 }}>
             <div />
             {months.map(m => (
               <div key={m} style={{ textAlign: 'center', fontSize: 11, color: 'var(--ar-muted)' }}>
@@ -309,7 +309,7 @@ function Heatmap({
 
           {/* Rows */}
           {grid.map((row, ri) => (
-            <div key={ri} style={{ display: 'grid', gridTemplateColumns: `110px repeat(${cols}, 1fr)`, gap: 6, marginBottom: 6 }}>
+            <div key={ri} style={{ display: 'grid', gridTemplateColumns: `110px repeat(${cols}, 44px)`, gap: 6, marginBottom: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', fontSize: 13, fontWeight: 500 }}>
                 {fmtCurrency(prices[ri], 0)}
               </div>
