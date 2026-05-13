@@ -27,12 +27,10 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
 
   const leftoverColor = leftover >= 0 ? 'var(--ar-green, #22c55e)' : 'var(--ar-red, #ef4444)';
 
-  const now = new Date();
-  const todayYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const scenarioProgress = progress?.[scenario.id] || {};
-  const startMonth = s1.startMonth || todayYM;
-  const currentMonthIdx = Math.max(0, monthsBetween(startMonth, todayYM));
-  const trackedBalance = scenarioProgress[currentMonthIdx] ?? 0;
+  const enteredMonths = Object.keys(scenarioProgress).map(Number).filter(n => n >= 0).sort((a, b) => a - b);
+  const latestIdx = enteredMonths.length > 0 ? enteredMonths[enteredMonths.length - 1] : -1;
+  const trackedBalance = latestIdx >= 0 ? (scenarioProgress[latestIdx] || 0) : 0;
   const dpPct = dp > 0 ? Math.min(100, Math.round((trackedBalance / dp) * 100)) : null;
   const barColor = dpPct != null && dpPct >= 100 ? 'var(--ar-pos)' : 'var(--ar-warn)';
 
