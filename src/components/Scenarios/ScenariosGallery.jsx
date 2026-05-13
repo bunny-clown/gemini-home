@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import GlobalHeader from '../Common/GlobalHeader';
-import { fmtCurrency, calcPI, buildRefiSimulation, mortgageBalance, monthsBetween, fmtMonthLabel } from '../../utils/calculations';
+import { fmtCurrency, calcPI, buildRefiSimulation, mortgageBalance, monthsBetween, fmtMonthLabel, buildSavingsTimeline } from '../../utils/calculations';
 
 function Row({ label, value, valueStyle }) {
   return (
@@ -16,6 +16,8 @@ function Row({ label, value, valueStyle }) {
 // ── Scenario card ───────────────────────────────────────────────────────────
 function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, onEdit, isDragging, isDragOver, onDragStart, onDragOver, onDrop, onDragEnd }) {
   const { progress } = useApp();
+  const [showBarPopup, setShowBarPopup] = useState(false);
+
   const s1 = scenario.step1 || {};
   const s2 = scenario.step2 || {};
   const homePrice = s1.selectedPrice || 0;
@@ -36,6 +38,16 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
   const dpPct = purchaseTarget > 0 ? Math.min(100, Math.round((trackedBalance / purchaseTarget) * 100)) : null;
   const barColor = dpPct != null && dpPct >= 100 ? 'var(--ar-pos)' : 'var(--ar-warn)';
 
+  const todayYM = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; })();
+  const timeline = useMemo(() => {
+    if (!s1.startMonth) return [];
+    return buildSavingsTimeline(s1.initialSavings || 0, s1.startMonth, s1.monthlyContrib || 0, s1.projectionMonths || 36, s1.overrides || {});
+  }, [s1]);
+  const currentMonthIdx = Math.max(0, Math.min(monthsBetween(s1.startMonth || todayYM, todayYM), timeline.length - 1));
+  const projectedBalance = timeline[currentMonthIdx]?.balance ?? 0;
+  const stillNeeded = Math.max(0, purchaseTarget - trackedBalance);
+  const vsProjected = trackedBalance - projectedBalance;
+
   return (
     <div
       className="ar-card"
@@ -51,7 +63,7 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
         outlineOffset: 0,
         transition: 'opacity 0.15s',
       }}
-      onClick={() => onOpenModal(scenario.id)}
+      onClick={() => { setShowBarPopup(false); onOpenModal(scenario.id); }}
     >
       {/* Drag handle */}
       <div
@@ -82,14 +94,44 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
           valueStyle={{ color: leftoverColor, fontWeight: 600 }}
         />
         {dpPct != null && (
-          <div style={{ padding: '6px 0 2px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+          <div style={{ padding: '6px 0 2px', position: 'relative' }}>
+            <div
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5, cursor: 'pointer' }}
+              onClick={e => { e.stopPropagation(); setShowBarPopup(v => !v); }}
+              onTouchStart={e => e.stopPropagation()}
+            >
               <span className="ar-label" style={{ color: 'var(--ar-muted, #888)' }}>Purchase ready</span>
               <span className="ar-num" style={{ fontSize: 12, fontWeight: 600, color: barColor }}>{dpPct}%</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: 'var(--ar-border)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${dpPct}%`, borderRadius: 3, background: barColor, transition: 'width 0.3s' }} />
             </div>
+            {showBarPopup && (
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{
+                  position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, right: 0,
+                  background: 'var(--ar-bg)', border: '1px solid var(--ar-border)',
+                  borderRadius: 10, padding: '10px 14px',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 20,
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Savings snapshot</div>
+                {[
+                  ['Saved', fmtCurrency(trackedBalance), null],
+                  ['Down payment', fmtCurrency(dp), null],
+                  ['Closing costs (est.)', fmtCurrency(closingCosts), null],
+                  ['Total needed', fmtCurrency(purchaseTarget), null],
+                  ['Still needed', stillNeeded > 0 ? fmtCurrency(stillNeeded) : '✓ Ready to buy', stillNeeded === 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                  ['vs. projection', (vsProjected >= 0 ? '+' : '') + fmtCurrency(vsProjected), vsProjected >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'],
+                ].map(([label, value, color]) => (
+                  <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '3px 0', fontSize: 12 }}>
+                    <span style={{ color: 'var(--ar-muted)' }}>{label}</span>
+                    <span className="ar-num" style={{ color: color || 'var(--ar-fg)', fontWeight: 500 }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
