@@ -89,6 +89,9 @@ function ScenarioCard({ scenario, isTarget, onSetTarget, onDelete, onOpenModal, 
             <div style={{ height: 6, borderRadius: 3, background: 'var(--ar-border)', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${dpPct}%`, borderRadius: 3, background: barColor, transition: 'width 0.3s' }} />
             </div>
+            <div style={{ fontSize: 10, color: 'var(--ar-muted)', marginTop: 2 }}>
+              dbg: bal={trackedBalance} keys={Object.keys(progress?.[scenario.id]||{}).join(',')}
+            </div>
           </div>
         )}
       </div>
