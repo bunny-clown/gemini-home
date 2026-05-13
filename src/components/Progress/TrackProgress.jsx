@@ -63,8 +63,7 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
   if (labelIdxs[labelIdxs.length - 1] !== data.length - 1) labelIdxs.push(data.length - 1);
 
   const popupRow = popup != null ? data[popup] : null;
-  const tooltipX = popup != null ? Math.min(Math.max(px(popup), 50), width - 140) : 0;
-  const tooltipY = popup != null ? Math.max(8, py(popupRow.projected) - 60) : 0;
+  const tooltipPct = popup != null ? Math.min(Math.max((px(popup) / width) * 100, 5), 55) : 0;
 
   return (
     <div style={{ position: 'relative' }}>
@@ -125,25 +124,33 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
           </text>
         ))}
 
-        {popupRow && (
-          <g>
-            <rect x={tooltipX - 4} y={tooltipY - 2} width={148} height={52}
-              rx={6} fill="var(--ar-bg)" stroke="var(--ar-border)" strokeWidth={1} />
-            <text x={tooltipX} y={tooltipY + 12} fontSize="10" fontWeight="700" fill="var(--ar-fg)">
-              {popupRow.name}
-            </text>
-            <text x={tooltipX} y={tooltipY + 26} fontSize="10" fill="var(--ar-muted)">
-              {`Target: ${fmtCurrency(popupRow.projected)}`}
-            </text>
-            {popupRow.actual != null && (
-              <text x={tooltipX} y={tooltipY + 40} fontSize="10" fill="var(--ar-pos)">
-                {`Actual: ${fmtCurrency(popupRow.actual)}`}
-              </text>
-            )}
-          </g>
-        )}
       </svg>
       </div>
+      {popupRow && (
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          left: `${tooltipPct}%`,
+          background: 'var(--ar-bg)',
+          border: '1px solid var(--ar-border)',
+          borderRadius: 10,
+          padding: '10px 14px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 10,
+          minWidth: 160,
+          pointerEvents: 'none',
+        }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>{popupRow.name}</div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)' }}>
+            Target: <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ar-fg)' }}>{fmtCurrency(popupRow.projected)}</span>
+          </div>
+          {popupRow.actual != null && (
+            <div style={{ fontSize: 12, color: 'var(--ar-pos)', marginTop: 4 }}>
+              Actual: <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtCurrency(popupRow.actual)}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

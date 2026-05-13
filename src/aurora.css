@@ -543,8 +543,10 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-track-chart-scroll { overflow-x: visible; }
   .ar-track-chart-scroll svg { min-width: unset !important; width: 100% !important; height: auto; min-height: 240px; }
 
-  /* Fund chart in Step3 */
-  .ar-fund-chart svg { min-height: 260px; }
+  /* Fund chart in Step3: scrollable so bars stay readable */
+  .ar-fund-chart-scroll-inner { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ar-fund-chart-scroll-inner svg { min-width: 520px; width: 100%; display: block; }
+  .ar-fund-chart-scroll-inner > div { min-width: 520px; }
 
   /* Heatmap: let card's natural padding create spacing; no full-bleed */
   .ar-heatmap-scroll { margin: 0; padding: 0; width: 100%; }

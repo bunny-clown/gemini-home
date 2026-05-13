@@ -64,7 +64,8 @@ function FundChart({ rows, funds, refiMonth, fundFillMonths, monthlyReserves }) 
     : 0;
 
   return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
+    <div ref={containerRef} className="ar-fund-chart-wrap" style={{ position: 'relative' }}>
+      <div className="ar-fund-chart-scroll-inner">
       <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', display: 'block' }}
         onMouseLeave={() => setHoveredCol(null)}>
         {/* Grid lines */}
@@ -113,9 +114,10 @@ function FundChart({ rows, funds, refiMonth, fundFillMonths, monthlyReserves }) 
                   <text x={x + 3} y={14} fontSize="9" fill="var(--ar-fg)" fontWeight="600">refi</text>
                 </>
               )}
-              {/* Invisible hover rect */}
+              {/* Invisible hover/touch rect */}
               <rect x={x} y={0} width={colWidth} height={h} fill="transparent"
-                onMouseEnter={() => setHoveredCol(i)} />
+                onMouseEnter={() => setHoveredCol(i)}
+                onTouchStart={e => { e.preventDefault(); setHoveredCol(hoveredCol === i ? null : i); }} />
             </g>
           );
         })}
@@ -137,6 +139,7 @@ function FundChart({ rows, funds, refiMonth, fundFillMonths, monthlyReserves }) 
           );
         })}
       </div>
+      </div>{/* end ar-fund-chart-scroll-inner */}
 
       {/* Hover tooltip */}
       {tooltip && (
