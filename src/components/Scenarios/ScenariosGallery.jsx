@@ -286,11 +286,12 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
             <ModalSection title="SAVINGS PLAN">
               <MR label="Starting month" value={s1.startMonth ? fmtMonthLabel(s1.startMonth, 0) : '—'} />
               <MR label="Monthly saving" value={monthlyContrib ? fmtCurrency(monthlyContrib) : '—'} />
-              <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
+              <MR label="Total saved" value={projectedSavingsAtPurchase ? fmtCurrency(projectedSavingsAtPurchase) : '—'} />
             </ModalSection>
             <ModalSection title="PURCHASE">
+              <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
+              <MR label="Purchase date" value={s1.selectedPurchaseMonth || '—'} />
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
-              <MR label="Total saved" value={projectedSavingsAtPurchase ? fmtCurrency(projectedSavingsAtPurchase) : '—'} />
               <MR label="Loan amount" value={loanAmount ? fmtCurrency(loanAmount) : '—'} />
               <MR label="Leftover cash" value={fmtCurrency(leftover)} color={leftover >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'} />
             </ModalSection>
@@ -344,11 +345,12 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
             <ModalSection title="SAVINGS PLAN">
               <MR label="Starting month" value={s1.startMonth ? fmtMonthLabel(s1.startMonth, 0) : '—'} />
               <MR label="Monthly saving" value={monthlyContrib ? fmtCurrency(monthlyContrib) : '—'} />
-              <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
+              <MR label="Total saved" value={projectedSavingsAtPurchase ? fmtCurrency(projectedSavingsAtPurchase) : '—'} />
             </ModalSection>
             <ModalSection title="PURCHASE">
+              <MR label="First available" value={fmtMonthLabel(purchaseMonth, 0)} />
+              <MR label="Purchase date" value={s1.selectedPurchaseMonth || '—'} />
               <MR label="Home price" value={homePrice ? fmtCurrency(homePrice) : '—'} />
-              <MR label="Total saved" value={projectedSavingsAtPurchase ? fmtCurrency(projectedSavingsAtPurchase) : '—'} />
               <MR label="Loan amount" value={loanAmount ? fmtCurrency(loanAmount) : '—'} />
               <MR label="Leftover cash" value={fmtCurrency(leftover)} color={leftover >= 0 ? 'var(--ar-pos)' : 'var(--ar-warn)'} />
             </ModalSection>
