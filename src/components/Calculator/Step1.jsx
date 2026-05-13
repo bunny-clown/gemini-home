@@ -385,8 +385,8 @@ function Heatmap({
 }
 
 // ── Main Step1 ──────────────────────────────────────────────────────────────
-export default function Step1({ data, onChange, scenarioId }) {
-  const { progress } = useApp();
+export default function Step1({ data, onChange }) {
+  const { progress, scenarios } = useApp();
   const vals = useMemo(
     () => ({ ...DEFAULT, ...data, overrides: data?.overrides || {} }),
     [data]
@@ -438,12 +438,23 @@ export default function Step1({ data, onChange, scenarioId }) {
             <h2 className="ar-display" style={{ fontSize: 30, margin: '8px 0 0', fontWeight: 400 }}>Project your savings</h2>
           </div>
           {(() => {
-            const byMonth = scenarioId ? (progress?.[scenarioId] || {}) : {};
-            const latest = Object.keys(byMonth)
-              .map(Number)
-              .filter(n => n >= 0)
-              .sort((a, b) => b - a)[0];
-            const trackedBalance = latest !== undefined ? byMonth[latest] : null;
+            // Find most recent tracked balance across all scenarios by calendar date
+            let latestCalMonth = null;
+            let trackedBalance = null;
+            for (const [sid, monthData] of Object.entries(progress || {})) {
+              const sc = scenarios.find(s => s.id === sid);
+              const startMonth = sc?.step1?.startMonth;
+              if (!startMonth) continue;
+              for (const [idxStr, balance] of Object.entries(monthData || {})) {
+                const idx = parseInt(idxStr);
+                if (idx < 0) continue;
+                const calMonth = addMonths(startMonth, idx);
+                if (!latestCalMonth || calMonth > latestCalMonth) {
+                  latestCalMonth = calMonth;
+                  trackedBalance = balance;
+                }
+              }
+            }
             return (
               <SliderRow
                 label="Starting balance" value={vals.initialSavings}

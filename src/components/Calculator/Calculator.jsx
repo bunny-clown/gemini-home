@@ -135,7 +135,7 @@ export default function Calculator({ editId }) {
       {/* Step content */}
       <div className="ar-scroll">
         <div className="ar-container" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {step === 1 && <Step1 data={step1} onChange={v => updateStep(setStep1, v)} scenarioId={savedId} />}
+          {step === 1 && <Step1 data={step1} onChange={v => updateStep(setStep1, v)} />}
           {step === 2 && <Step2 data={step2} onChange={v => updateStep(setStep2, v)} step1={step1} />}
           {step === 3 && <Step3 data={step3} onChange={v => updateStep(setStep3, v)} step1={step1} step2={step2} />}
 
