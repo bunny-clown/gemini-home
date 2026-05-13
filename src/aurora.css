@@ -117,7 +117,7 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-grid-3 { grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; }
 }
 @media (max-width: 600px) {
-  .ar-grid-2, .ar-grid-3, .ar-grid-4 { grid-template-columns: 1fr; grid-auto-rows: 1fr; }
+  .ar-grid-2, .ar-grid-3, .ar-grid-4 { grid-template-columns: 1fr; grid-auto-rows: auto; }
 }
 
 .ar-tile { height: 100%; }

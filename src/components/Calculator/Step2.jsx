@@ -539,7 +539,7 @@ export default function Step2({ data, onChange, step1 }) {
                 { label: 'Surplus', value: monthlySurplus, color: 'var(--ar-pos)' },
               ]}
             />
-            <div className="ar-grid-3" style={{ marginTop: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 14 }}>
               <Stat label="Housing" value={fmtCurrency(piti.total)} />
               <Stat label="Other" value={fmtCurrency(computedOtherExp)} />
               <Stat
