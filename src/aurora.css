@@ -592,7 +592,8 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-track-table th:nth-child(2) { width: 65px; }
   .ar-track-table th:nth-child(3) { width: 90px; }
   .ar-track-table th:nth-child(4) { width: 55px; }
-  .ar-track-table th:nth-child(5) { width: 50px; }
+  .ar-track-table th:nth-child(5),
+  .ar-track-table td:nth-child(5) { display: none; }
   .ar-track-table td { padding: 6px 4px; font-size: 13px; }
   .ar-track-table td:first-child { text-align: left; }
   .ar-track-table td:not(:first-child) { text-align: right; }
