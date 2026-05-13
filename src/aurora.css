@@ -462,6 +462,7 @@ html, body, #root { background: #f4f2ee !important; }
 /* ── Heatmap horizontal scroll ── */
 .ar-heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ar-heatmap-inner { min-width: 460px; }
+.ar-heatmap-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
 /* ── Fund config table scroll ── */
 .ar-fund-config-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
@@ -545,12 +546,11 @@ html, body, #root { background: #f4f2ee !important; }
   /* Fund chart in Step3 */
   .ar-fund-chart svg { min-height: 260px; }
 
-  /* Heatmap */
-  .ar-heatmap-scroll { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; width: calc(100% + 32px); }
-  .ar-heatmap-inner { padding: 0 8px; }
+  /* Heatmap: let card's natural padding create spacing; no full-bleed */
+  .ar-heatmap-scroll { margin: 0; padding: 0; width: 100%; }
 
-  /* Heatmap controls: Min/Max on row 1, Increment under Max on row 2 */
-  .ar-heatmap-controls { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+  /* Heatmap controls: Min/Max on row 1, Increment forced under Max */
+  .ar-heatmap-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
   .ar-heatmap-controls label:last-child { grid-column: 2; }
 
   /* Savings chart: natural aspect ratio instead of absolute-fill */
@@ -568,7 +568,7 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-track-title { font-size: 32px !important; }
   .ar-track-legend { gap: 10px !important; }
   .ar-track-legend svg { width: 16px; height: 8px; }
-  .ar-track-input { font-size: 16px !important; width: 80px !important; padding: 6px 8px !important; min-height: 36px; }
+  .ar-track-input { font-size: 13px !important; width: 90px !important; padding: 6px 8px !important; min-height: 36px; }
   .ar-track-actions { flex-direction: column; width: 100%; }
   .ar-track-actions .ar-btn { width: 100%; justify-content: center; }
 
@@ -588,7 +588,7 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-track-table th { font-size: 10px; padding: 6px 4px; text-align: right; }
   .ar-track-table th:first-child { text-align: left; width: 60px; }
   .ar-track-table th:nth-child(2) { width: 70px; }
-  .ar-track-table th:nth-child(3) { width: 90px; }
+  .ar-track-table th:nth-child(3) { width: 100px; }
   .ar-track-table th:nth-child(4) { width: 65px; }
   .ar-track-table th:nth-child(5) { width: 60px; }
   .ar-track-table td { padding: 6px 4px; font-size: 13px; }
