@@ -532,11 +532,7 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-fund-config-scroll {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin-left: -16px;
-    margin-right: -16px;
-    padding-left: 16px;
-    padding-right: 16px;
-    width: calc(100% + 32px);
+    width: 100%;
   }
 
   /* Charts: scale naturally, taller on mobile */
@@ -576,10 +572,10 @@ html, body, #root { background: #f4f2ee !important; }
   .ar-track-actions { flex-direction: column; width: 100%; }
   .ar-track-actions .ar-btn { width: 100%; justify-content: center; }
 
-  /* Track chart: larger, scrollable */
-  .ar-track-chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 0 16px; width: calc(100% + 32px); }
-  .ar-track-chart-wrap .ar-track-chart-scroll { overflow: visible; min-width: 560px; }
-  .ar-track-chart-wrap .ar-track-chart-scroll svg { min-width: 560px !important; width: 560px !important; height: 260px !important; min-height: 260px !important; }
+  /* Track chart: scrollable within card padding */
+  .ar-track-chart-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ar-track-chart-wrap .ar-track-chart-scroll { overflow: visible; min-width: 520px; }
+  .ar-track-chart-wrap .ar-track-chart-scroll svg { min-width: 520px !important; width: 520px !important; height: 260px !important; min-height: 260px !important; }
 
   /* Track KPIs: compact */
   .ar-track-kpi .ar-card-sm { padding: 10px 12px; border-radius: 12px; }
