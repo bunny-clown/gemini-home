@@ -17,7 +17,7 @@ const DEFAULT = {
   downPct: 20,
   heatmapPriceMin: 500000,
   heatmapPriceMax: 850000,
-  heatmapPriceIncrement: 25000,
+  heatmapPriceIncrement: 50000,
   overrides: {},
 };
 
