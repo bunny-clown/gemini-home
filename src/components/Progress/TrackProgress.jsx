@@ -66,7 +66,7 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
   const tooltipPct = popup != null ? Math.min(Math.max((px(popup) / width) * 100, 5), 55) : 0;
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative' }} onClick={() => setPopup(null)}>
       <div className="ar-track-chart-scroll">
       <svg width="100%" viewBox={`0 0 ${width} ${height}`} style={{ display: 'block', cursor: 'pointer' }}
         onMouseLeave={() => setPopup(null)}>
@@ -83,9 +83,9 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
 
         {data.map((d, i) => (
           <g key={i}
-            onClick={() => setPopup(popup === i ? null : i)}
+            onClick={e => { e.stopPropagation(); setPopup(popup === i ? null : i); }}
             onMouseEnter={() => setPopup(i)}
-            onTouchStart={() => setPopup(i)}
+            onTouchStart={e => { e.stopPropagation(); setPopup(i); }}
           >
             <circle cx={px(i)} cy={py(d.projected)} r={12} fill="transparent" />
             <circle cx={px(i)} cy={py(d.projected)} r={popup === i ? 5 : 3}
@@ -127,7 +127,7 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
       </svg>
       </div>
       {popupRow && (
-        <div style={{
+        <div onClick={e => e.stopPropagation()} style={{
           position: 'absolute',
           top: 8,
           left: `${tooltipPct}%`,

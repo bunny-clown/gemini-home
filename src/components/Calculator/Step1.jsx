@@ -98,13 +98,10 @@ function SavingsCurve({ data, startMonth, downPct, selectedMonthIdx, onOverride 
     ? Math.floor(popupData.balance / ((downPct + CLOSING_PCT) / 100) / 1000) * 1000
     : 0;
 
-  // Popup position as % of SVG dimensions, clamped so it stays inside
-  const popupPt = popup != null ? points[popup] : null;
-  const popupLeft = popupPt ? `${Math.min(Math.max((popupPt[0] / w) * 100, 2), 52)}%` : '0%';
-  const popupTop  = popupPt ? `${Math.min(Math.max((popupPt[1] / h) * 100 + 4, 2), 55)}%` : '0%';
+  const tooltipPct = popup != null ? Math.min(Math.max((points[popup][0] / w) * 100, 2), 52) : 0;
 
   return (
-    <div className="ar-savings-chart" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 180 }}>
+    <div className="ar-savings-chart" style={{ position: 'relative', width: '100%', height: '100%', minHeight: 180 }} onClick={() => setPopup(null)}>
       <svg
         viewBox={`0 0 ${w} ${h}`}
         style={{ width: '100%', height: '100%', cursor: 'pointer', display: 'block', position: 'absolute', inset: 0 }}
@@ -128,7 +125,7 @@ function SavingsCurve({ data, startMonth, downPct, selectedMonthIdx, onOverride 
         {points.map((p, i) => {
           const isSel = i === selectedPoint;
           return (
-            <g key={i} onClick={() => handleSelectMonth(i)} style={{ cursor: 'pointer' }}>
+            <g key={i} onClick={e => { e.stopPropagation(); handleSelectMonth(i); }} style={{ cursor: 'pointer' }}>
               <circle cx={p[0]} cy={p[1]} r={12} fill="transparent" />
               {isSel ? (
                 <>
@@ -159,38 +156,30 @@ function SavingsCurve({ data, startMonth, downPct, selectedMonthIdx, onOverride 
 
       {/* Overlay popup */}
       {popupData && (
-        <div style={{
+        <div onClick={e => e.stopPropagation()} style={{
           position: 'absolute',
-          left: popupLeft,
-          top: popupTop,
-          zIndex: 10,
-          padding: '12px 14px',
-          borderRadius: 12,
+          top: 8,
+          left: `${tooltipPct}%`,
           background: 'var(--ar-bg)',
           border: '1px solid var(--ar-border)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-          minWidth: 200,
-          pointerEvents: 'auto',
+          borderRadius: 10,
+          padding: '10px 14px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+          zIndex: 10,
+          minWidth: 160,
+          pointerEvents: 'none',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontSize: 12, color: 'var(--ar-muted)', fontWeight: 500 }}>
-              {fmtMonthLabel(startMonth, popupData.month)}
-            </span>
-            <button
-              onClick={() => setPopup(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, color: 'var(--ar-muted)', padding: 0 }}
-            >×</button>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+            {fmtMonthLabel(startMonth, popupData.month)}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Stat label="Savings balance" value={fmtCurrency(popupData.balance)} />
-            <Stat label="Max home price" value={fmtCurrency(maxHomePrice)} />
-            <div className="ar-stat">
-              <div className="ar-stat-label">Monthly contribution</div>
-              <div className="ar-stat-value ar-num">
-                <EditableContrib contrib={popupData.contrib} monthIdx={popupData.month}
-                  onOverride={(idx, v) => onOverride && onOverride(idx, v)} />
-              </div>
-            </div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)' }}>
+            Balance: <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ar-fg)' }}>{fmtCurrency(popupData.balance)}</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginTop: 4 }}>
+            Max home: <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ar-fg)' }}>{fmtCurrency(maxHomePrice)}</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginTop: 4 }}>
+            Monthly: <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--ar-fg)' }}>{fmtCurrency(popupData.contrib)}</span>
           </div>
         </div>
       )}
