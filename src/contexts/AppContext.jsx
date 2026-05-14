@@ -35,23 +35,30 @@ export function AppProvider({ children }) {
   useEffect(() => saveToStorage('hpm_username', userName), [userName]);
 
   // Firebase auth state listener — single source of truth for sign-in/out
+  const lastUidRef = useRef(null);
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) return;
     const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         const firstName = fbUser.displayName?.split(' ')[0] || fbUser.email?.split('@')[0] || 'Friend';
-        const cloudData = await loadUserData(fbUser.uid);
-        if (cloudData) {
-          setScenarios(cloudData.scenarios ?? []);
-          setProgress(cloudData.progress ?? {});
-          setTargetId(cloudData.targetId ?? null);
-          setUserName(cloudData.userName || firstName);
-        } else {
-          // New user — keep local data, derive name from auth profile
-          setUserName(prev => prev === 'Emma' ? firstName : prev);
+        // Only load from Firestore when the user actually changes (sign-in / switch account).
+        // Token refreshes re-fire this callback with the same uid — skip the load to avoid
+        // overwriting in-memory changes that haven't been synced to Firestore yet.
+        if (lastUidRef.current !== fbUser.uid) {
+          lastUidRef.current = fbUser.uid;
+          const cloudData = await loadUserData(fbUser.uid);
+          if (cloudData) {
+            setScenarios(cloudData.scenarios ?? []);
+            setProgress(cloudData.progress ?? {});
+            setTargetId(cloudData.targetId ?? null);
+            setUserName(cloudData.userName || firstName);
+          } else {
+            setUserName(prev => prev === 'Emma' ? firstName : prev);
+          }
         }
         setUser(fbUser);
       } else {
+        lastUidRef.current = null;
         setUser(null);
       }
       setAuthLoading(false);
