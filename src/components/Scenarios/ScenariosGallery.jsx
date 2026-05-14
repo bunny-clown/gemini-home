@@ -232,6 +232,7 @@ function ScenarioModal({ scenario, onClose, onSetTarget, isTarget, onEdit, updat
       purchaseMonth, refiDateStr: refiDate, targetPayment: s3.targetPayment || 0,
       emergencyTarget: 0, renovTarget: 0, customFunds: s3.customFunds || [],
       refiRate: rate || 5.5, fundOrder: s3.fundOrder || [],
+      purchaseLeftover: Math.max(0, leftover),
       monthlyFundContrib: monthlyReserves,
     });
   } catch { /* leave null */ }

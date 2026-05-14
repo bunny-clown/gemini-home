@@ -171,6 +171,7 @@ export function buildRefiSimulation({
   refiRate,
   fundOrder = [], // array of fund IDs in priority order
   monthlyFundContrib = 0, // monthly surplus from budget to distribute to funds
+  purchaseLeftover = 0, // leftover cash after down payment + closing costs
 }) {
   if (!purchaseMonth || !refiDateStr) {
     return { rows: [], balAtRefi: 0, reqRate: null, refiPI: 0, targetPI: targetPayment, prepayDetails: null, allFunds: [], feasible: false, prepayFundBalance: 0, newLoanBalance: 0, reqRateWithPrepay: null, infeasibleWithPrepay: false };
@@ -212,6 +213,20 @@ export function buildRefiSimulation({
   if (!hasPerFundSeeds && seedFund && seedAmount > 0) {
     const sf = allFunds.find(f => f.id === seedFund);
     if (sf) sf.balance = Math.min(sf.balance + seedAmount, sf.target === Infinity ? seedAmount : sf.target);
+  }
+
+  // Distribute purchase leftover to funds in priority order
+  if (purchaseLeftover > 0) {
+    let remaining = purchaseLeftover;
+    for (const f of allFunds) {
+      if (remaining <= 0) break;
+      const space = f.target === Infinity ? remaining : f.target - f.balance;
+      if (space > 0) {
+        const add = Math.min(space, remaining);
+        f.balance += add;
+        remaining -= add;
+      }
+    }
   }
 
   const fundFillMonths = {}; // id → label of month fund first reached target

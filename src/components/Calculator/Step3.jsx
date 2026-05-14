@@ -310,6 +310,9 @@ export default function Step3({ data, onChange, step1, step2 }) {
       .sort((a, b) => a.priority - b.priority);
   }, [vals.customFunds, activeFundOrder]);
 
+  const selectedBalance = step1?.selectedBalance || 0;
+  const purchaseLeftover = Math.max(0, selectedBalance - homePrice * downPct / 100 - homePrice * 0.04);
+
   const sim = useMemo(() => buildRefiSimulation({
     purchasePrice: homePrice,
     loanAmount,
@@ -324,7 +327,8 @@ export default function Step3({ data, onChange, step1, step2 }) {
     refiRate: vals.testRefiRate,
     fundOrder: activeFundOrder,
     monthlyFundContrib: monthlyReserves,
-  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves]);
+    purchaseLeftover,
+  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover]);
 
   const balAtRefi = useMemo(() =>
     mortgageBalance(loanAmount, purchaseRate, loanTerm, monthsToRefi),
