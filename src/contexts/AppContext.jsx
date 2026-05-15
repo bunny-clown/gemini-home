@@ -60,6 +60,15 @@ export function AppProvider({ children }) {
       } else {
         lastUidRef.current = null;
         setUser(null);
+        setScenarios([]);
+        setProgress({});
+        setTargetId(null);
+        setUserName('');
+        setCompareIds([]);
+        saveToStorage(STORAGE_KEY, []);
+        saveToStorage(PROGRESS_KEY, {});
+        saveToStorage('hpm_target', null);
+        saveToStorage('hpm_username', '');
       }
       setAuthLoading(false);
     });
