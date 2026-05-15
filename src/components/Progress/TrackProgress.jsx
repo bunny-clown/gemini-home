@@ -311,31 +311,6 @@ export default function TrackProgress() {
             onChange={e => setStandaloneConfig(c => ({ ...c, initialSavings: parseFloat(e.target.value) || 0 }))}
           />
         </div>
-        <div>
-          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginBottom: 6 }}>Monthly savings ($)</div>
-          <input
-            type="number"
-            className="ar-input ar-num"
-            style={{ width: '100%', padding: '8px 12px' }}
-            value={standaloneConfig.monthlyContrib}
-            step={100}
-            min={0}
-            onChange={e => setStandaloneConfig(c => ({ ...c, monthlyContrib: parseFloat(e.target.value) || 0 }))}
-          />
-        </div>
-        <div>
-          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginBottom: 6 }}>Months to project</div>
-          <input
-            type="number"
-            className="ar-input ar-num"
-            style={{ width: '100%', padding: '8px 12px' }}
-            value={standaloneConfig.projectionMonths}
-            step={6}
-            min={6}
-            max={120}
-            onChange={e => setStandaloneConfig(c => ({ ...c, projectionMonths: parseInt(e.target.value) || 36 }))}
-          />
-        </div>
       </div>
     </div>
   );
