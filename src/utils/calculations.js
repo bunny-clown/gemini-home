@@ -172,6 +172,7 @@ export function buildRefiSimulation({
   fundOrder = [], // array of fund IDs in priority order
   monthlyFundContrib = 0, // monthly surplus from budget to distribute to funds
   purchaseLeftover = 0, // leftover cash after down payment + closing costs
+  prepaymentBoost = 0, // outside lump sum added to prepay fund at refi time
 }) {
   if (!purchaseMonth || !refiDateStr) {
     return { rows: [], balAtRefi: 0, reqRate: null, refiPI: 0, targetPI: targetPayment, prepayDetails: null, allFunds: [], feasible: false, prepayFundBalance: 0, newLoanBalance: 0, reqRateWithPrepay: null, infeasibleWithPrepay: false };
