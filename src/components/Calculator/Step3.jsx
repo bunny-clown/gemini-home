@@ -17,6 +17,7 @@ const DEFAULT = {
   customFunds: [],
   fundOrder: [],
   seedOrder: [],
+  prepaymentBoost: 0,
 };
 
 // ── Fund balance chart ──────────────────────────────────────────────────────
@@ -265,6 +266,7 @@ export default function Step3({ data, onChange, step1, step2 }) {
   const set = useCallback((k, v) => onChange({ ...vals, [k]: v }), [vals, onChange]);
 
   const [chartView, setChartView] = useState('chart'); // 'chart' | 'table'
+  const [showBoostInput, setShowBoostInput] = useState(false);
 
   // Derived from step1/step2
   const purchaseMonth = step1?.selectedPurchaseMonth || step1?.startMonth || DEFAULT_PURCHASE;
@@ -328,7 +330,8 @@ export default function Step3({ data, onChange, step1, step2 }) {
     fundOrder: activeFundOrder,
     monthlyFundContrib: monthlyReserves,
     purchaseLeftover,
-  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover]);
+    prepaymentBoost: vals.prepaymentBoost || 0,
+  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover, vals.prepaymentBoost]);
 
   const balAtRefi = useMemo(() =>
     mortgageBalance(loanAmount, purchaseRate, loanTerm, monthsToRefi),
@@ -707,16 +710,55 @@ export default function Step3({ data, onChange, step1, step2 }) {
                   </td>
                   {/* At refi */}
                   <td className="ar-num" style={{ textAlign: 'right' }}>
-                    <span style={{
-                      fontWeight: 600, fontSize: 13,
-                      color: filled ? 'var(--ar-pos, #1fa97a)' : 'var(--ar-fg)',
-                    }}>
-                      {atRefi ? fmtCurrency(atRefi.balance) : '—'}
-                    </span>
-                    {f.target !== Infinity && (
-                      <span style={{ fontSize: 10, color: 'var(--ar-muted)', marginLeft: 4 }}>
-                        / {fmtCurrency(f.target)}
-                      </span>
+                    {f.id === 'prepay' ? (
+                      showBoostInput ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                          <div style={{ fontSize: 11, color: 'var(--ar-muted)' }}>
+                            reserves: {fmtCurrency(atRefi?.balance || 0)}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 11, color: 'var(--ar-muted)' }}>+ boost:</span>
+                            <input
+                              type="number"
+                              className="ar-input"
+                              style={{ width: 90, textAlign: 'right', padding: '4px 8px', fontSize: 13 }}
+                              step={1000}
+                              min={0}
+                              value={vals.prepaymentBoost || 0}
+                              autoFocus
+                              onChange={e => set('prepaymentBoost', Math.max(0, parseFloat(e.target.value) || 0))}
+                              onBlur={() => setShowBoostInput(false)}
+                            />
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ar-pos)' }}>
+                            = {fmtCurrency((atRefi?.balance || 0) + (vals.prepaymentBoost || 0))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span
+                          style={{ fontWeight: 600, fontSize: 13, cursor: 'pointer', borderBottom: '1px dashed var(--ar-border)' }}
+                          title="Click to add prepayment boost"
+                          onClick={() => setShowBoostInput(true)}
+                        >
+                          {fmtCurrency((atRefi?.balance || 0) + (vals.prepaymentBoost || 0))}
+                          {(vals.prepaymentBoost || 0) > 0 && (
+                            <span style={{ fontSize: 10, color: 'var(--ar-pos)', marginLeft: 4, fontWeight: 400 }}>
+                              +{fmtCurrency(vals.prepaymentBoost)} boost
+                            </span>
+                          )}
+                        </span>
+                      )
+                    ) : (
+                      <>
+                        <span style={{ fontWeight: 600, fontSize: 13, color: filled ? 'var(--ar-pos, #1fa97a)' : 'var(--ar-fg)' }}>
+                          {atRefi ? fmtCurrency(atRefi.balance) : '—'}
+                        </span>
+                        {f.target !== Infinity && (
+                          <span style={{ fontSize: 10, color: 'var(--ar-muted)', marginLeft: 4 }}>
+                            / {fmtCurrency(f.target)}
+                          </span>
+                        )}
+                      </>
                     )}
                   </td>
                   {/* Month filled */}

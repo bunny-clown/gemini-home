@@ -286,9 +286,9 @@ export function buildRefiSimulation({
     loanAmount, purchaseRate, monthsToRefi,
   });
 
-  // Prepayment fund reduces loan balance at refi; compute rate achievable after prepayment
+  // Prepayment fund reduces loan balance at refi; boost is a lump-sum added at refi time
   const prepayFund = allFunds.find(f => f.id === 'prepay');
-  const prepayFundBalance = prepayFund ? prepayFund.balance : 0;
+  const prepayFundBalance = (prepayFund ? prepayFund.balance : 0) + prepaymentBoost;
   const newLoanBalance = Math.max(0, balAtRefi - prepayFundBalance);
   const minPaymentAt0Pct = loanTerm > 0 ? newLoanBalance / (loanTerm * 12) : 0;
   const infeasibleWithPrepay = newLoanBalance > 0 && targetPayment < minPaymentAt0Pct;
