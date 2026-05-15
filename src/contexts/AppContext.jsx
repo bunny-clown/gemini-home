@@ -8,6 +8,14 @@ const AppContext = createContext(null);
 
 const STORAGE_KEY = 'hpm_scenarios_v1';
 const PROGRESS_KEY = 'hpm_progress_v1';
+const STANDALONE_KEY = 'hpm_standalone_v1';
+
+const DEFAULT_STANDALONE = {
+  initialSavings: 0,
+  startMonth: new Date().toISOString().slice(0, 7),
+  monthlyContrib: 0,
+  projectionMonths: 36,
+};
 
 function loadFromStorage(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
@@ -27,12 +35,14 @@ export function AppProvider({ children }) {
   const [currentScenario, setCurrentScenario] = useState(null);
   const [navGuard, setNavGuard] = useState(null);
   const [userName, setUserName] = useState(() => loadFromStorage('hpm_username', 'Emma'));
+  const [standaloneConfig, setStandaloneConfig] = useState(() => loadFromStorage(STANDALONE_KEY, DEFAULT_STANDALONE));
 
   // localStorage — always kept in sync as offline fallback
   useEffect(() => saveToStorage(STORAGE_KEY, scenarios), [scenarios]);
   useEffect(() => saveToStorage('hpm_target', targetId), [targetId]);
   useEffect(() => saveToStorage(PROGRESS_KEY, progress), [progress]);
   useEffect(() => saveToStorage('hpm_username', userName), [userName]);
+  useEffect(() => saveToStorage(STANDALONE_KEY, standaloneConfig), [standaloneConfig]);
 
   // Firebase auth state listener — single source of truth for sign-in/out
   const lastUidRef = useRef(null);
@@ -52,6 +62,7 @@ export function AppProvider({ children }) {
             setProgress(cloudData.progress ?? {});
             setTargetId(cloudData.targetId ?? null);
             setUserName(cloudData.userName || firstName);
+            if (cloudData.standaloneConfig) setStandaloneConfig(cloudData.standaloneConfig);
           } else {
             setUserName(prev => prev === 'Emma' ? firstName : prev);
           }
@@ -65,10 +76,12 @@ export function AppProvider({ children }) {
         setTargetId(null);
         setUserName('');
         setCompareIds([]);
+        setStandaloneConfig(DEFAULT_STANDALONE);
         saveToStorage(STORAGE_KEY, []);
         saveToStorage(PROGRESS_KEY, {});
         saveToStorage('hpm_target', null);
         saveToStorage('hpm_username', '');
+        saveToStorage(STANDALONE_KEY, DEFAULT_STANDALONE);
       }
       setAuthLoading(false);
     });
@@ -81,10 +94,10 @@ export function AppProvider({ children }) {
     if (!user || user.isDemo || !isFirebaseConfigured) return;
     clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(() => {
-      saveUserData(user.uid, { scenarios, progress, targetId, userName });
+      saveUserData(user.uid, { scenarios, progress, targetId, userName, standaloneConfig });
     }, 2000);
     return () => clearTimeout(syncTimerRef.current);
-  }, [user, scenarios, progress, targetId, userName]);
+  }, [user, scenarios, progress, targetId, userName, standaloneConfig]);
 
   const signOut = useCallback(async () => {
     if (user?.isDemo) {
@@ -179,6 +192,7 @@ export function AppProvider({ children }) {
       reorderScenarios,
       userName, setUserName,
       navGuard, setNavGuard,
+      standaloneConfig, setStandaloneConfig,
     }}>
       {children}
     </AppContext.Provider>

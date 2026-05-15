@@ -4,6 +4,9 @@ import GlobalHeader from '../Common/GlobalHeader';
 import { useApp } from '../../contexts/AppContext';
 import { buildSavingsTimeline, fmtCurrency, fmtMonthLabel, monthsBetween } from '../../utils/calculations';
 import CurrencyInput from '../Common/CurrencyInput';
+import MonthPicker from '../Common/MonthPicker';
+
+const STANDALONE_ID = 'standalone';
 
 
 /* ─── KPI card ─────────────────────────────────────────────────────────── */
@@ -158,27 +161,31 @@ function MiniChart({ data, width = 600, height = 180, buyAtMonth }) {
 /* ─── Main component ────────────────────────────────────────────────────── */
 export default function TrackProgress() {
   const navigate   = useNavigate();
-  const { scenarios, targetId, progress, updateProgress } = useApp();
+  const { scenarios, targetId, progress, updateProgress, standaloneConfig, setStandaloneConfig } = useApp();
 
+  const hasScenarios = scenarios.length > 0;
   const [selectedId, setSelectedId] = useState(
-    targetId || (scenarios[0]?.id ?? '')
+    hasScenarios ? (targetId || scenarios[0]?.id || STANDALONE_ID) : STANDALONE_ID
   );
 
-  const scenario = scenarios.find(s => s.id === selectedId);
+  const isStandalone = selectedId === STANDALONE_ID || !hasScenarios;
+  const scenario = isStandalone ? null : scenarios.find(s => s.id === selectedId);
   const s1       = useMemo(() => scenario?.step1 || {}, [scenario]);
 
   const timeline = useMemo(() => {
-    if (!scenario) return [];
+    const cfg = isStandalone ? standaloneConfig : s1;
+    if (!cfg) return [];
     return buildSavingsTimeline(
-      s1.initialSavings     || 0,
-      s1.startMonth         || new Date().toISOString().slice(0, 7),
-      s1.monthlyContrib     || 0,
-      s1.projectionMonths   || 36,
-      s1.overrides          || {}
+      cfg.initialSavings     || 0,
+      cfg.startMonth         || new Date().toISOString().slice(0, 7),
+      cfg.monthlyContrib     || 0,
+      cfg.projectionMonths   || 36,
+      isStandalone ? {} : (cfg.overrides || {})
     );
-  }, [scenario, s1]);
+  }, [isStandalone, standaloneConfig, s1]);
 
-  const actualByMonth = progress?.[selectedId] || {};
+  const trackingId = isStandalone ? STANDALONE_ID : selectedId;
+  const actualByMonth = progress?.[trackingId] || {};
 
   const [showPrior, setShowPrior] = useState(false);
   const [extraPriorCount, setExtraPriorCount] = useState(0);
@@ -187,7 +194,7 @@ export default function TrackProgress() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   })();
-  const startMonth = s1.startMonth || todayStr;
+  const startMonth = (isStandalone ? standaloneConfig.startMonth : s1.startMonth) || todayStr;
   const currentMonthIdx = Math.max(0, Math.min(monthsBetween(startMonth, todayStr), timeline.length - 1));
 
   /* Chart data */
@@ -240,8 +247,8 @@ export default function TrackProgress() {
         <td style={{ textAlign: 'right' }}>
           <CurrencyInput
             value={actual}
-            onChange={v => updateProgress && updateProgress(selectedId, monthIdx, v)}
-            onClear={() => updateProgress && updateProgress(selectedId, monthIdx, null)}
+            onChange={v => updateProgress && updateProgress(trackingId, monthIdx, v)}
+            onClear={() => updateProgress && updateProgress(trackingId, monthIdx, null)}
             className="ar-input ar-num ar-track-input"
           />
         </td>
@@ -280,35 +287,58 @@ export default function TrackProgress() {
     );
   }
 
-  /* ── Empty state ──────────────────────────────────────────────────────── */
-  if (!scenario) {
-    return (
-      <>
-        <GlobalHeader />
-        <div className="ar-scroll">
-          <div className="ar-container" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <div>
-              <div className="ar-label">Tracking</div>
-              <h1 className="ar-display" style={{ fontSize: 44, fontWeight: 400, margin: '6px 0 0' }}>
-                Actual vs target
-              </h1>
-            </div>
-            <div style={{ textAlign: 'center', padding: '80px 0' }}>
-              <h2 className="ar-display" style={{ fontSize: 28, fontWeight: 400, margin: '0 0 8px' }}>
-                No scenarios yet
-              </h2>
-              <p style={{ color: 'var(--ar-muted)', marginBottom: 24 }}>
-                Create a scenario to start tracking your savings progress.
-              </p>
-              <button className="ar-btn ar-btn-accent" onClick={() => navigate('/calculator')}>
-                Create a scenario
-              </button>
-            </div>
-          </div>
+  /* ── Standalone config card (shown when no scenario selected) ── */
+  const standaloneConfigCard = isStandalone && (
+    <div className="ar-card">
+      <div className="ar-label" style={{ marginBottom: 12 }}>Savings plan · manual setup</div>
+      <div className="ar-grid-2" style={{ gap: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginBottom: 6 }}>Start month</div>
+          <MonthPicker
+            value={standaloneConfig.startMonth}
+            onChange={v => setStandaloneConfig(c => ({ ...c, startMonth: v }))}
+          />
         </div>
-      </>
-    );
-  }
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginBottom: 6 }}>Starting balance ($)</div>
+          <input
+            type="number"
+            className="ar-input ar-num"
+            style={{ width: '100%', padding: '8px 12px' }}
+            value={standaloneConfig.initialSavings}
+            step={500}
+            min={0}
+            onChange={e => setStandaloneConfig(c => ({ ...c, initialSavings: parseFloat(e.target.value) || 0 }))}
+          />
+        </div>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginBottom: 6 }}>Monthly savings ($)</div>
+          <input
+            type="number"
+            className="ar-input ar-num"
+            style={{ width: '100%', padding: '8px 12px' }}
+            value={standaloneConfig.monthlyContrib}
+            step={100}
+            min={0}
+            onChange={e => setStandaloneConfig(c => ({ ...c, monthlyContrib: parseFloat(e.target.value) || 0 }))}
+          />
+        </div>
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--ar-muted)', marginBottom: 6 }}>Months to project</div>
+          <input
+            type="number"
+            className="ar-input ar-num"
+            style={{ width: '100%', padding: '8px 12px' }}
+            value={standaloneConfig.projectionMonths}
+            step={6}
+            min={6}
+            max={120}
+            onChange={e => setStandaloneConfig(c => ({ ...c, projectionMonths: parseInt(e.target.value) || 36 }))}
+          />
+        </div>
+      </div>
+    </div>
+  );
 
   /* ── Main view ────────────────────────────────────────────────────────── */
   return (
@@ -328,21 +358,26 @@ export default function TrackProgress() {
 
             {/* Scenario selector */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-              <div className="ar-label" style={{ fontSize: 10, letterSpacing: '0.12em' }}>COMPARING AGAINST</div>
+              <div className="ar-label" style={{ fontSize: 10, letterSpacing: '0.12em' }}>
+                {hasScenarios ? 'COMPARING AGAINST' : 'MODE'}
+              </div>
               <select
                 value={selectedId}
                 onChange={e => setSelectedId(e.target.value)}
                 className="ar-input"
                 style={{ width: 220, fontSize: 14, fontWeight: 500 }}
               >
-                {scenarios.map(s => (
+                {hasScenarios && scenarios.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.name || 'Unnamed'}
                   </option>
                 ))}
+                <option value={STANDALONE_ID}>No scenario · manual</option>
               </select>
             </div>
           </div>
+
+          {standaloneConfigCard}
 
           {/* 4 KPI summary cards */}
           <div className="ar-grid-4 ar-track-kpi">
@@ -377,7 +412,7 @@ export default function TrackProgress() {
                   </svg>
                   Actual
                 </span>
-                {s1.buyAtMonth != null && (
+                {!isStandalone && s1.buyAtMonth != null && (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <svg width="20" height="10">
                       <line x1="10" y1="0" x2="10" y2="10" stroke="var(--ar-warn)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.8" />
@@ -388,7 +423,7 @@ export default function TrackProgress() {
               </div>
             </div>
             <div className="ar-track-chart-wrap">
-              <MiniChart data={chartData} buyAtMonth={s1.buyAtMonth ?? null} />
+              <MiniChart data={chartData} buyAtMonth={isStandalone ? null : (s1.buyAtMonth ?? null)} />
             </div>
           </div>
 
