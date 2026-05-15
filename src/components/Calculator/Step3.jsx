@@ -331,7 +331,8 @@ export default function Step3({ data, onChange, step1, step2 }) {
     monthlyFundContrib: monthlyReserves,
     purchaseLeftover,
     prepaymentBoost: vals.prepaymentBoost || 0,
-  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover, vals.prepaymentBoost]);
+    seedOrder: activeSeedOrder,
+  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover, vals.prepaymentBoost, activeSeedOrder]);
 
   const balAtRefi = useMemo(() =>
     mortgageBalance(loanAmount, purchaseRate, loanTerm, monthsToRefi),

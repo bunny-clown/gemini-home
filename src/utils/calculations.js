@@ -173,6 +173,7 @@ export function buildRefiSimulation({
   monthlyFundContrib = 0, // monthly surplus from budget to distribute to funds
   purchaseLeftover = 0, // leftover cash after down payment + closing costs
   prepaymentBoost = 0, // outside lump sum added to prepay fund at refi time
+  seedOrder = [], // custom fund IDs in seed-fill priority order
 }) {
   if (!purchaseMonth || !refiDateStr) {
     return { rows: [], balAtRefi: 0, reqRate: null, refiPI: 0, targetPI: targetPayment, prepayDetails: null, allFunds: [], feasible: false, prepayFundBalance: 0, newLoanBalance: 0, reqRateWithPrepay: null, infeasibleWithPrepay: false };
@@ -202,26 +203,32 @@ export function buildRefiSimulation({
       })
     : baseFunds;
 
-  // Apply per-fund seeds (from fund.seed property on custom funds, in priority order)
-  let hasPerFundSeeds = false;
-  for (const f of allFunds) {
-    if (f.seed && f.seed > 0 && f.id !== 'prepay') {
-      f.balance = Math.min(f.seed, f.target === Infinity ? f.seed : f.target);
-      hasPerFundSeeds = true;
-    }
-  }
-  // Legacy single-seed fallback
-  if (!hasPerFundSeeds && seedFund && seedAmount > 0) {
-    const sf = allFunds.find(f => f.id === seedFund);
-    if (sf) sf.balance = Math.min(sf.balance + seedAmount, sf.target === Infinity ? seedAmount : sf.target);
-  }
+  // Seed-ordered fund list for phase-1 distribution
+  const seedOrderedFunds = seedOrder.length > 0
+    ? seedOrder.map(id => allFunds.find(f => f.id === id)).filter(Boolean)
+    : allFunds.filter(f => f.id !== 'prepay');
 
-  // Distribute purchase leftover to funds in priority order
-  if (purchaseLeftover > 0) {
-    let remaining = purchaseLeftover;
+  // Two-phase distribution: phase 1 fills funds to seed amount in seed order,
+  // phase 2 fills to full target in fund order. No money is added — it all
+  // comes from the surplus being distributed.
+  function distribute(amount) {
+    let remaining = amount;
+    // Phase 1: fill each fund up to its seed amount, in seed priority order
+    for (const f of seedOrderedFunds) {
+      if (remaining <= 0) break;
+      if (!f.seed || f.seed <= 0) continue;
+      const seedCap = Math.min(f.seed, f.target === Infinity ? f.seed : f.target);
+      const seedSpace = Math.max(0, seedCap - f.balance);
+      if (seedSpace > 0) {
+        const add = Math.min(seedSpace, remaining);
+        f.balance += add;
+        remaining -= add;
+      }
+    }
+    // Phase 2: fill to full targets in fund order
     for (const f of allFunds) {
       if (remaining <= 0) break;
-      const space = f.target === Infinity ? remaining : f.target - f.balance;
+      const space = f.target === Infinity ? remaining : Math.max(0, f.target - f.balance);
       if (space > 0) {
         const add = Math.min(space, remaining);
         f.balance += add;
@@ -229,6 +236,9 @@ export function buildRefiSimulation({
       }
     }
   }
+
+  // Distribute purchase leftover using same two-phase logic
+  if (purchaseLeftover > 0) distribute(purchaseLeftover);
 
   const fundFillMonths = {}; // id → label of month fund first reached target
 
@@ -238,19 +248,8 @@ export function buildRefiSimulation({
     mortgageBal = Math.max(0, mortgageBal - principalPaid);
     equity += principalPaid;
 
-    // Distribute monthly surplus to funds in priority order
-    if (monthlyFundContrib > 0) {
-      let remaining = monthlyFundContrib;
-      for (const f of allFunds) {
-        if (remaining <= 0) break;
-        const space = f.target - f.balance;
-        if (space > 0) {
-          const add = Math.min(space, remaining);
-          f.balance += add;
-          remaining -= add;
-        }
-      }
-    }
+    // Distribute monthly surplus using two-phase seed-then-fund-order logic
+    if (monthlyFundContrib > 0) distribute(monthlyFundContrib);
 
     // Track when each capped fund first reaches its target
     for (const f of allFunds) {
