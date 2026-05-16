@@ -315,24 +315,33 @@ export default function Step3({ data, onChange, step1, step2 }) {
   const selectedBalance = step1?.selectedBalance || 0;
   const purchaseLeftover = Math.max(0, selectedBalance - homePrice * downPct / 100 - homePrice * 0.04);
 
-  const sim = useMemo(() => buildRefiSimulation({
-    purchasePrice: homePrice,
-    loanAmount,
-    purchaseRate,
-    loanTerm,
-    purchaseMonth,
-    refiDateStr: vals.refiDate,
-    targetPayment: vals.targetPayment,
-    emergencyTarget: 0,
-    renovTarget: 0,
-    customFunds: vals.customFunds || [],
-    refiRate: vals.testRefiRate,
-    fundOrder: activeFundOrder,
-    monthlyFundContrib: monthlyReserves,
-    purchaseLeftover,
-    prepaymentBoost: vals.prepaymentBoost || 0,
-    seedOrder: activeSeedOrder,
-  }), [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover, vals.prepaymentBoost, activeSeedOrder]);
+  const EMPTY_SIM = { rows: [], balAtRefi: 0, reqRate: null, refiPI: 0, targetPI: 0, allFunds: [], feasible: false, prepayFundBalance: 0, newLoanBalance: 0, reqRateWithPrepay: null, infeasibleWithPrepay: false, fundFillMonths: {} };
+  const sim = useMemo(() => {
+    try {
+      return buildRefiSimulation({
+        purchasePrice: homePrice,
+        loanAmount,
+        purchaseRate,
+        loanTerm,
+        purchaseMonth,
+        refiDateStr: vals.refiDate,
+        targetPayment: vals.targetPayment,
+        emergencyTarget: 0,
+        renovTarget: 0,
+        customFunds: vals.customFunds || [],
+        refiRate: vals.testRefiRate,
+        fundOrder: activeFundOrder,
+        monthlyFundContrib: monthlyReserves,
+        purchaseLeftover,
+        prepaymentBoost: vals.prepaymentBoost || 0,
+        seedOrder: activeSeedOrder,
+      });
+    } catch (e) {
+      console.error('buildRefiSimulation error:', e);
+      return EMPTY_SIM;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homePrice, loanAmount, purchaseRate, loanTerm, purchaseMonth, vals.refiDate, vals.targetPayment, vals.testRefiRate, vals.customFunds, activeFundOrder, monthlyReserves, purchaseLeftover, vals.prepaymentBoost, activeSeedOrder]);
 
   const balAtRefi = useMemo(() =>
     mortgageBalance(loanAmount, purchaseRate, loanTerm, monthsToRefi),
