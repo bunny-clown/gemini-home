@@ -20,6 +20,8 @@ const DEFAULT = {
   prepaymentBoost: 0,
 };
 
+const EMPTY_SIM = { rows: [], balAtRefi: 0, reqRate: null, refiPI: 0, targetPI: 0, allFunds: [], feasible: false, prepayFundBalance: 0, newLoanBalance: 0, reqRateWithPrepay: null, infeasibleWithPrepay: false, fundFillMonths: {} };
+
 // ── Fund balance chart ──────────────────────────────────────────────────────
 function FundChart({ rows, funds, refiMonth, fundFillMonths, monthlyReserves }) {
   const [hoveredCol, setHoveredCol] = useState(null);
@@ -315,7 +317,6 @@ export default function Step3({ data, onChange, step1, step2 }) {
   const selectedBalance = step1?.selectedBalance || 0;
   const purchaseLeftover = Math.max(0, selectedBalance - homePrice * downPct / 100 - homePrice * 0.04);
 
-  const EMPTY_SIM = { rows: [], balAtRefi: 0, reqRate: null, refiPI: 0, targetPI: 0, allFunds: [], feasible: false, prepayFundBalance: 0, newLoanBalance: 0, reqRateWithPrepay: null, infeasibleWithPrepay: false, fundFillMonths: {} };
   const sim = useMemo(() => {
     try {
       return buildRefiSimulation({
