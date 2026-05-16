@@ -317,6 +317,20 @@ export default function Step3({ data, onChange, step1, step2 }) {
   const selectedBalance = step1?.selectedBalance || 0;
   const purchaseLeftover = Math.max(0, selectedBalance - homePrice * downPct / 100 - homePrice * 0.04);
 
+  const customFundIds = (vals.customFunds || []).map(f => f.id);
+  const activeSeedOrder = useMemo(() => {
+    if (vals.seedOrder && vals.seedOrder.length > 0) {
+      return [
+        ...new Set([
+          ...vals.seedOrder.filter(id => customFundIds.includes(id)),
+          ...customFundIds.filter(id => !vals.seedOrder.includes(id)),
+        ]),
+      ];
+    }
+    return customFundIds;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vals.seedOrder, vals.customFunds]);
+
   const sim = useMemo(() => {
     try {
       return buildRefiSimulation({
@@ -408,20 +422,6 @@ export default function Step3({ data, onChange, step1, step2 }) {
     [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
     set('fundOrder', next);
   }, [activeFundOrder, set]);
-
-  const customFundIds = (vals.customFunds || []).map(f => f.id);
-  const activeSeedOrder = useMemo(() => {
-    if (vals.seedOrder && vals.seedOrder.length > 0) {
-      return [
-        ...new Set([
-          ...vals.seedOrder.filter(id => customFundIds.includes(id)),
-          ...customFundIds.filter(id => !vals.seedOrder.includes(id)),
-        ]),
-      ];
-    }
-    return customFundIds;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vals.seedOrder, vals.customFunds]);
 
   const moveSeedPriority = useCallback((id, dir) => {
     const idx = activeSeedOrder.indexOf(id);
